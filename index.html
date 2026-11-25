@@ -1530,63 +1530,135 @@
       onFromFoodChange(true);
     }
 
+    // ---------- Busca aproximada (palavras em qualquer ordem, sem acento, plural e erros de digitação) ----------
+    const SEARCH_STOPWORDS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'a', 'o', 'as', 'os', 'em', 'na', 'no', 'ao', 'com']);
+
+    function searchTokens(str) {
+      return normStr(str)
+        .split(/[^a-z0-9]+/)
+        .filter(t => t && !SEARCH_STOPWORDS.has(t))
+        .map(t => (t.length > 3 && t.endsWith('s')) ? t.slice(0, -1) : t); // "ovos" ≈ "ovo"
+    }
+
+    function editDistance(a, b, max) {
+      if (Math.abs(a.length - b.length) > max) return max + 1;
+      let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+      for (let i = 1; i <= a.length; i++) {
+        const cur = [i];
+        let rowMin = i;
+        for (let j = 1; j <= b.length; j++) {
+          cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+          if (cur[j] < rowMin) rowMin = cur[j];
+        }
+        if (rowMin > max) return max + 1;
+        prev = cur;
+      }
+      return prev[b.length];
+    }
+
+    // Pontua o quanto um termo digitado combina com as palavras do nome do alimento
+    function tokenScore(q, words, fullName) {
+      let best = 0;
+      const maxTypos = q.length >= 7 ? 2 : (q.length >= 4 ? 1 : 0);
+      for (const w of words) {
+        if (w === q) return 4;
+        if (w.startsWith(q)) best = Math.max(best, 3);
+        else if (q.length >= 3 && w.includes(q)) best = Math.max(best, 2);
+        else if (maxTypos > 0) {
+          // erro de digitação: compara com a palavra inteira ou com o início dela
+          const d = Math.min(editDistance(q, w, maxTypos), editDistance(q, w.slice(0, q.length), maxTypos));
+          if (d <= maxTypos) best = Math.max(best, 1.5 - d * 0.25);
+        }
+      }
+      if (!best && q.length >= 3 && fullName.includes(q)) best = 1;
+      return best;
+    }
+
+    function scoreFood(f, tokens, rawQuery) {
+      const nName = normStr(f.name);
+      if (f.id.toString() === rawQuery.trim()) return { score: 1000, matched: tokens.length };
+      const words = searchTokens(f.name);
+      let score = 0, matched = 0;
+      tokens.forEach((q, i) => {
+        const s = tokenScore(q, words, nName);
+        if (s > 0) { matched++; score += s; if (i === 0 && words[0] && words[0].startsWith(q)) score += 1.5; }
+      });
+      if (nName.startsWith(normStr(rawQuery).trim())) score += 3;
+      return { score, matched };
+    }
+
     function filterSwapOptions(type, forceId = null) {
       const isFrom = type === 'from';
       const searchInput = document.getElementById(isFrom ? 'swap-from-search' : 'swap-to-search');
       const select = document.getElementById(isFrom ? 'swap-from' : 'swap-to');
       if (!select) return;
 
+      const previousVal = select.value;
       const currentVal = forceId !== null ? forceId : (select.value ? parseInt(select.value, 10) : null);
-      const query = normStr(searchInput ? searchInput.value : '');
+      const rawQuery = searchInput ? searchInput.value : '';
+      const tokens = searchTokens(rawQuery);
 
       const allFoods = Object.values(TACO_FOODS);
-      const filtered = allFoods.filter(f => {
-        if (!isFrom && currentSwapCategory !== 'all' && f.cat !== currentSwapCategory) {
-          return false;
-        }
-        if (!query) return true;
-        const nName = normStr(f.name);
-        const idMatch = f.id.toString() === query;
-        return nName.includes(query) || idMatch;
-      });
+      const inCategory = f => isFrom || currentSwapCategory === 'all' || f.cat === currentSwapCategory;
 
-      // Sort: exact or starting matches first, then alphabetical
-      filtered.sort((a, b) => {
-        if (query) {
-          const aStarts = normStr(a.name).startsWith(query);
-          const bStarts = normStr(b.name).startsWith(query);
-          if (aStarts && !bStarts) return -1;
-          if (!aStarts && bStarts) return 1;
+      let filtered;
+      let partial = false, outsideCategory = false;
+      if (!tokens.length) {
+        filtered = allFoods.filter(inCategory).map(f => ({ f, score: 0 }));
+      } else {
+        const rank = pool => pool.map(f => ({ f, ...scoreFood(f, tokens, rawQuery) })).filter(r => r.matched > 0);
+        let ranked = rank(allFoods.filter(inCategory));
+        if (!ranked.length && !isFrom && currentSwapCategory !== 'all') {
+          // nada na categoria escolhida: procura em todas para a lista não sumir
+          ranked = rank(allFoods);
+          outsideCategory = ranked.length > 0;
         }
-        return a.name.localeCompare(b.name, 'pt-BR');
-      });
+        const full = ranked.filter(r => r.matched === tokens.length);
+        if (full.length) filtered = full;
+        else {
+          // nenhum alimento tem todas as palavras: mostra os que têm mais palavras em comum
+          const bestMatched = Math.max(0, ...ranked.map(r => r.matched));
+          filtered = ranked.filter(r => r.matched === bestMatched);
+          partial = filtered.length > 0;
+        }
+      }
+
+      filtered.sort((a, b) => (b.score - a.score) || a.f.name.localeCompare(b.f.name, 'pt-BR'));
+      filtered = filtered.map(r => r.f);
 
       let optionsHtml = '';
       filtered.forEach(f => {
-        const isSel = (currentVal !== null && f.id === currentVal);
-        optionsHtml += `<option value="${f.id}" ${isSel ? 'selected' : ''}>${f.name} — ${f.kcal.toFixed(0)} kcal (${f.cat || 'Geral'}) [P:${f.p}g C:${f.c}g G:${f.f}g]</option>`;
+        optionsHtml += `<option value="${f.id}">${f.name} — ${f.kcal.toFixed(0)} kcal (${f.cat || 'Geral'}) [P:${f.p}g C:${f.c}g G:${f.f}g]</option>`;
       });
 
       if (filtered.length === 0) {
-        optionsHtml = '<option value="">Nenhum alimento encontrado com esse termo</option>';
+        optionsHtml = '<option value="">Nenhum alimento parecido encontrado</option>';
       }
 
       select.innerHTML = optionsHtml;
 
-      // Select fallback if currentVal was filtered out
-      if (currentVal !== null && filtered.some(f => f.id === currentVal)) {
+      // Ao digitar, seleciona o melhor resultado; sem busca, mantém a seleção atual
+      if (tokens.length && forceId === null && filtered.length > 0) {
+        select.value = filtered[0].id;
+      } else if (currentVal !== null && filtered.some(f => f.id === currentVal)) {
         select.value = currentVal;
       } else if (filtered.length > 0) {
         select.value = filtered[0].id;
       }
 
-      if (isFrom) {
-        // Updated from food
-      } else {
+      if (!isFrom) {
         const badge = document.getElementById('swap-to-cat-badge');
         if (badge) {
-          badge.textContent = `${filtered.length} opções disponíveis`;
+          badge.textContent = `${filtered.length} opções disponíveis`
+            + (outsideCategory ? ' (fora da categoria)' : '')
+            + (partial ? ' (parecidos)' : '');
         }
+      }
+
+      // Recalcula na hora quando a busca muda o alimento selecionado
+      if (forceId === null && select.value && select.value !== previousVal) {
+        if (isFrom) onFromFoodChange();
+        else calculateSwap();
       }
     }
 
