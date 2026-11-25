@@ -442,6 +442,40 @@
           </div>
         </div>
       </div>
+
+      <!-- Xiaomi Mi Body Composition Scale 2 (Web Bluetooth) -->
+      <div class="bg-[var(--background)] border border-[var(--border)] rounded-lg p-3.5 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <div class="text-xs font-medium text-[var(--foreground)]">⚖️ Balança Xiaomi Mi Body Composition Scale 2</div>
+            <div id="scale-status" class="text-[11px] text-[var(--muted-foreground)]">Suba na balança e toque em conectar (Chrome no Android).</div>
+          </div>
+          <button id="scale-connect-btn" onclick="scaleConnect()" class="shrink-0 px-3 py-1.5 rounded text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition">🔗 Conectar balança</button>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span id="scale-live-weight" class="text-3xl font-bold text-emerald-400">—</span>
+          <span class="text-xs text-[var(--muted-foreground)]">kg</span>
+          <span id="scale-live-flag" class="text-[11px] text-[var(--muted-foreground)] ml-auto"></span>
+        </div>
+        <div id="scale-composition" class="grid grid-cols-3 gap-2"></div>
+        <div id="scale-last-date" class="text-[10px] text-[var(--muted-foreground)]"></div>
+        <details class="text-xs">
+          <summary class="cursor-pointer text-[11px] text-emerald-400">Perfil para cálculo de gordura / músculo</summary>
+          <div class="flex flex-wrap items-end gap-2 pt-2">
+            <label class="text-[10px] text-[var(--muted-foreground)]">Altura (cm)<input id="scale-height" type="number" step="1" class="block w-20 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)]" /></label>
+            <label class="text-[10px] text-[var(--muted-foreground)]">Idade<input id="scale-age" type="number" step="1" class="block w-16 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)]" /></label>
+            <label class="text-[10px] text-[var(--muted-foreground)]">Sexo<select id="scale-sex" class="block bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)]"><option value="1">Masculino</option><option value="0">Feminino</option></select></label>
+            <button onclick="scaleSaveProfile()" class="px-3 py-1 rounded text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition">Salvar</button>
+          </div>
+        </details>
+        <details class="text-xs">
+          <summary class="cursor-pointer text-[11px] text-emerald-400">Histórico de pesagens (últimas 10)</summary>
+          <table class="w-full text-[11px] mt-2">
+            <thead class="text-[var(--muted-foreground)]"><tr><th class="text-left">Data</th><th class="text-left">Peso</th><th class="text-left">Gordura</th><th class="text-left">Músculo</th><th></th></tr></thead>
+            <tbody id="scale-history"></tbody>
+          </table>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -1995,5 +2029,6 @@
   </div>
 
   </div><!-- /#app-content -->
+  <script src="scale.js"></script>
 </body>
 </html>
