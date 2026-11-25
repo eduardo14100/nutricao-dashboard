@@ -564,142 +564,141 @@ export default function NutritionDashboard({
         </div>
       </header>
 
-      {/* Main Grid: GP_METRICS + Projected vs Realized Chart & Xiaomi Scale */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-semibold text-[var(--foreground)]">
-                Metas Diárias &amp; Progresso ({formatFullDateBR(activeDate)})
-              </h2>
-              <p className="text-xs text-[var(--muted-foreground)]">
-                Calculado em tempo real e salvo automaticamente no Supabase
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleResetPlan("A")}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:opacity-90 cursor-pointer"
-            >
-              Restaurar Plano Base (A)
-            </button>
+      {/* Metas Diárias & Progresso (Full-width, compact & balanced) */}
+      <section className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--foreground)]">
+              Metas Diárias &amp; Progresso ({formatFullDateBR(activeDate)})
+            </h2>
+            <p className="text-xs text-[var(--muted-foreground)]">
+              Calculado em tempo real e salvo automaticamente no Supabase
+            </p>
           </div>
-
-          <div className="space-y-3">
-            {gpMetrics.map((m) => {
-              const pct = Math.min(100, Math.round((m.actual / m.goal) * 100));
-              let barColor = "bg-emerald-500";
-              let statusEl = null;
-
-              if (m.kind === "budget") {
-                const diff = m.goal - m.actual;
-                if (Math.abs(diff) <= 60) {
-                  statusEl = (
-                    <span className="text-emerald-500 font-medium">
-                      No Alvo ({diff >= 0 ? `-${diff.toFixed(0)}` : `+${Math.abs(diff).toFixed(0)}`} kcal)
-                    </span>
-                  );
-                } else if (diff < -60) {
-                  barColor = "bg-amber-500";
-                  statusEl = (
-                    <span className="text-amber-500 font-medium">Acima (+{Math.abs(diff).toFixed(0)} kcal)</span>
-                  );
-                } else {
-                  statusEl = <span className="text-sky-500 font-medium">Abaixo (-{diff.toFixed(0)} kcal)</span>;
-                }
-              } else if (m.kind === "limit") {
-                if (m.actual <= m.goal * 0.9) {
-                  statusEl = (
-                    <span className="text-emerald-500 font-medium">
-                      Controlado ({(m.goal - m.actual).toFixed(0)} {m.unit} abaixo)
-                    </span>
-                  );
-                } else {
-                  barColor = "bg-amber-500";
-                  statusEl = <span className="text-amber-500 font-medium">Próximo ao limite</span>;
-                }
-              } else {
-                if (m.actual >= m.goal * 0.92) {
-                  statusEl = <span className="text-emerald-500 font-medium">Meta Atingida ({pct}%)</span>;
-                } else {
-                  barColor = "bg-sky-500";
-                  statusEl = (
-                    <span className="text-amber-500 font-medium">
-                      Faltam {(m.goal - m.actual).toFixed(0)} {m.unit}
-                    </span>
-                  );
-                }
-              }
-
-              return (
-                <div key={m.key} className="space-y-1">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <span className="font-medium text-[var(--foreground)]">{m.label}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-[var(--foreground)]">
-                        {m.actual.toFixed(m.unit === "g" ? 1 : 0)} / {m.goal} {m.unit}
-                      </span>
-                      {statusEl}
-                    </div>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-[var(--background)] border border-[var(--border)] overflow-hidden">
-                    <div className={`h-full ${barColor} transition-all duration-300`} style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="pt-3 border-t border-[var(--border)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <div className="text-sm font-medium">
-                💧 Hidratação Diária (Meta: {settings.water_goal_ml.toLocaleString("pt-BR")} ml — 35 ml/kg)
-              </div>
-              <div className="text-xs text-[var(--muted-foreground)]">
-                Atual em {formatFullDateBR(activeDate)}:{" "}
-                <span className="font-semibold text-[var(--foreground)]">{waterMl.toLocaleString("pt-BR")}</span> ml registrados
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleAddWater(-250)}
-                className="px-2.5 py-1 text-xs rounded border border-[var(--border)] bg-[var(--background)] hover:opacity-80 cursor-pointer"
-              >
-                -250 ml
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAddWater(250)}
-                className="px-2.5 py-1 text-xs rounded border border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:opacity-80 cursor-pointer"
-              >
-                +250 ml
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAddWater(500)}
-                className="px-2.5 py-1 text-xs rounded bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 cursor-pointer"
-              >
-                +500 ml
-              </button>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => handleResetPlan("A")}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:opacity-90 cursor-pointer"
+          >
+            Restaurar Plano Base (A)
+          </button>
         </div>
 
-        <WeightChartCard
-          weights={weights}
-          scaleMeasurements={scaleMeasurements}
-          settings={settings}
-          simDeficit={simDeficit}
-          onDeficitChange={handleDeficitChange}
-          onSaveWeight={handleSaveWeight}
-          onDeleteWeight={handleDeleteWeight}
-          onResetWeights={handleResetWeights}
-          onSyncScaleMeasurements={handleSyncScaleMeasurements}
-          onDeleteScaleMeasurement={handleDeleteScaleMeasurement}
-          onSaveBodyProfile={handleSaveBodyProfile}
-        />
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3.5">
+          {gpMetrics.map((m) => {
+            const pct = Math.min(100, Math.round((m.actual / m.goal) * 100));
+            let barColor = "bg-emerald-500";
+            let statusEl = null;
+
+            if (m.kind === "budget") {
+              const diff = m.goal - m.actual;
+              if (Math.abs(diff) <= 60) {
+                statusEl = (
+                  <span className="text-emerald-500 font-medium">
+                    No Alvo ({diff >= 0 ? `-${diff.toFixed(0)}` : `+${Math.abs(diff).toFixed(0)}`} kcal)
+                  </span>
+                );
+              } else if (diff < -60) {
+                barColor = "bg-amber-500";
+                statusEl = (
+                  <span className="text-amber-500 font-medium">Acima (+{Math.abs(diff).toFixed(0)} kcal)</span>
+                );
+              } else {
+                statusEl = <span className="text-sky-500 font-medium">Abaixo (-{diff.toFixed(0)} kcal)</span>;
+              }
+            } else if (m.kind === "limit") {
+              if (m.actual <= m.goal * 0.9) {
+                statusEl = (
+                  <span className="text-emerald-500 font-medium">
+                    Controlado ({(m.goal - m.actual).toFixed(0)} {m.unit} abaixo)
+                  </span>
+                );
+              } else {
+                barColor = "bg-amber-500";
+                statusEl = <span className="text-amber-500 font-medium">Próximo ao limite</span>;
+              }
+            } else {
+              if (m.actual >= m.goal * 0.92) {
+                statusEl = <span className="text-emerald-500 font-medium">Meta Atingida ({pct}%)</span>;
+              } else {
+                barColor = "bg-sky-500";
+                statusEl = (
+                  <span className="text-amber-500 font-medium">
+                    Faltam {(m.goal - m.actual).toFixed(0)} {m.unit}
+                  </span>
+                );
+              }
+            }
+
+            return (
+              <div key={m.key} className={`space-y-1.5 ${m.key === "kcal" ? "md:col-span-2" : ""}`}>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span className="font-medium text-[var(--foreground)]">{m.label}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[var(--foreground)]">
+                      {m.actual.toFixed(m.unit === "g" ? 1 : 0)} / {m.goal} {m.unit}
+                    </span>
+                    {statusEl}
+                  </div>
+                </div>
+                <div className="w-full h-2 rounded-full bg-[var(--background)] border border-[var(--border)] overflow-hidden">
+                  <div className={`h-full ${barColor} transition-all duration-300`} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="pt-3 border-t border-[var(--border)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="text-sm font-medium">
+              💧 Hidratação Diária (Meta: {settings.water_goal_ml.toLocaleString("pt-BR")} ml — 35 ml/kg)
+            </div>
+            <div className="text-xs text-[var(--muted-foreground)]">
+              Atual em {formatFullDateBR(activeDate)}:{" "}
+              <span className="font-semibold text-[var(--foreground)]">{waterMl.toLocaleString("pt-BR")}</span> ml registrados
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleAddWater(-250)}
+              className="px-2.5 py-1 text-xs rounded border border-[var(--border)] bg-[var(--background)] hover:opacity-80 cursor-pointer"
+            >
+              -250 ml
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAddWater(250)}
+              className="px-2.5 py-1 text-xs rounded border border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:opacity-80 cursor-pointer"
+            >
+              +250 ml
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAddWater(500)}
+              className="px-2.5 py-1 text-xs rounded bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 cursor-pointer"
+            >
+              +500 ml
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Projected vs Realized Chart & Xiaomi Scale (Full-width section below) */}
+      <WeightChartCard
+        weights={weights}
+        scaleMeasurements={scaleMeasurements}
+        settings={settings}
+        simDeficit={simDeficit}
+        onDeficitChange={handleDeficitChange}
+        onSaveWeight={handleSaveWeight}
+        onDeleteWeight={handleDeleteWeight}
+        onResetWeights={handleResetWeights}
+        onSyncScaleMeasurements={handleSyncScaleMeasurements}
+        onDeleteScaleMeasurement={handleDeleteScaleMeasurement}
+        onSaveBodyProfile={handleSaveBodyProfile}
+      />
 
       {/* 5 Meals Interactive Selector */}
       <section className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-5">

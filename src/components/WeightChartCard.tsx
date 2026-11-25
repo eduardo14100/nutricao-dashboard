@@ -76,12 +76,12 @@ function ProjectedVsRealizedSvg({
   const svgRef = useRef<SVGSVGElement>(null);
   const [hover, setHover] = useState<HoverInspect | null>(null);
 
-  const w = isModal ? 960 : 420;
-  const h = isModal ? 360 : 196;
-  const padL = isModal ? 60 : 38;
-  const padR = isModal ? 28 : 16;
-  const padT = isModal ? 30 : 18;
-  const padB = isModal ? 44 : 28;
+  const w = isModal ? 960 : 780;
+  const h = isModal ? 360 : 280;
+  const padL = isModal ? 60 : 54;
+  const padR = isModal ? 28 : 22;
+  const padT = isModal ? 30 : 24;
+  const padB = isModal ? 44 : 36;
 
   const allVals = [
     ...data.projectedLine.map((p) => p.projectedKg),
@@ -95,7 +95,7 @@ function ProjectedVsRealizedSvg({
   const yPos = (val: number) =>
     padT + ((maxW - val) / Math.max(0.5, maxW - minW)) * (h - padT - padB);
 
-  const gridSteps = isModal ? 6 : 3;
+  const gridSteps = isModal ? 6 : 5;
   const gridLines = Array.from({ length: gridSteps + 1 }, (_, i) => {
     const val = minW + (i / gridSteps) * (maxW - minW);
     return { val, y: yPos(val) };
@@ -193,7 +193,7 @@ function ProjectedVsRealizedSvg({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${w} ${h}`}
-        className={`w-full ${isModal ? "h-64 sm:h-80" : "h-48"} cursor-crosshair select-none`}
+        className={`w-full ${isModal ? "h-64 sm:h-80" : "h-60 sm:h-72"} cursor-crosshair select-none`}
         onMouseMove={(e) => handlePointer(e.clientX, e.clientY)}
         onMouseLeave={() => setHover(null)}
         onTouchStart={(e) => {
@@ -230,14 +230,14 @@ function ProjectedVsRealizedSvg({
               strokeDasharray="3 3"
             />
             <text
-              x={padL - (isModal ? 10 : 5)}
+              x={padL - 10}
               y={g.y + 4}
               textAnchor="end"
-              fontSize={isModal ? 12 : 10}
+              fontSize={isModal ? 12 : 11}
               fill="currentColor"
-              opacity="0.68"
+              opacity="0.7"
             >
-              {isModal ? `${g.val.toFixed(1)} kg` : g.val.toFixed(1)}
+              {`${g.val.toFixed(1)} kg`}
             </text>
           </g>
         ))}
@@ -317,32 +317,29 @@ function ProjectedVsRealizedSvg({
         {data.projectedCheckpoints.map((cp, idx) => {
           const cx = xPos(cp.day);
           const cy = yPos(cp.projectedKg);
-          const hideOnSmall = !isModal && idx % 2 === 1 && idx !== data.projectedCheckpoints.length - 1;
           return (
             <g key={cp.date}>
               {showProjected ? (
                 <circle
                   cx={cx}
                   cy={cy}
-                  r={isModal ? 3.5 : 2.2}
+                  r={isModal ? 3.5 : 3}
                   fill="#0f172a"
                   stroke="#38bdf8"
                   strokeWidth="1.5"
                 />
               ) : null}
-              {!hideOnSmall ? (
-                <text
-                  x={cx}
-                  y={isModal ? h - 16 : h - 8}
-                  textAnchor="middle"
-                  fontSize={isModal ? 11 : 10}
-                  fontWeight={isModal ? 600 : 400}
-                  fill="currentColor"
-                  opacity="0.72"
-                >
-                  {cp.label}
-                </text>
-              ) : null}
+              <text
+                x={cx}
+                y={isModal ? h - 16 : h - 12}
+                textAnchor="middle"
+                fontSize={11}
+                fontWeight={600}
+                fill="currentColor"
+                opacity="0.78"
+              >
+                {cp.label}
+              </text>
               {isModal ? (
                 <text
                   x={cx}
@@ -556,214 +553,227 @@ export default function WeightChartCard({
 
   return (
     <>
-      <div className="lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm flex flex-col justify-between space-y-4">
-        <div>
-          <div className="flex items-center justify-between gap-2">
+      <section className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border)] pb-3">
+          <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-semibold text-[var(--foreground)]">
-                Projetado × Realizado
+                Acompanhamento de Peso — Projetado × Realizado
               </h2>
               <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-medium border border-emerald-500/30">
                 EWMA α=0.15
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition shadow-sm cursor-pointer"
-            >
-              <span>Maximizar ⛶</span>
-            </button>
+            <p className="text-xs text-[var(--muted-foreground)] mt-1">
+              Cruzamento dia a dia ({seriesData.realizedDaily.length} dia(s) realizado(s) no Supabase • 1ª pesagem/jejum) sincronizado com a balança Xiaomi.
+            </p>
           </div>
-          <p className="text-xs text-[var(--muted-foreground)] mt-1">
-            Cruzamento dia a dia ({seriesData.realizedDaily.length} dia(s) realizado(s) no Supabase • 1ª pesagem/jejum).
-          </p>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="self-start sm:self-auto flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition shadow-sm cursor-pointer"
+          >
+            <span>Maximizar Gráfico ⛶</span>
+          </button>
         </div>
 
-        {/* Mini Projected vs Realized KPI Strip */}
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2">
-            <div className="text-[10px] text-sky-400 font-medium">Projetado Hoje</div>
-            <div className="text-sm font-bold text-white">{seriesData.projectedTodayKg.toFixed(1)} kg</div>
-          </div>
-          <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2">
-            <div className="text-[10px] text-amber-400 font-medium">
-              Realizado ({latest ? latest.label : "—"})
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Left 8 cols: Wide Projected vs Realized Chart + Controls + Day-by-Day Table */}
+          <div className="lg:col-span-8 space-y-4">
+            {/* Projected vs Realized KPI Strip */}
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2.5">
+                <div className="text-[11px] text-sky-400 font-medium">Projetado Hoje</div>
+                <div className="text-base font-bold text-white mt-0.5">
+                  {seriesData.projectedTodayKg.toFixed(1)} kg
+                </div>
+              </div>
+              <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2.5">
+                <div className="text-[11px] text-amber-400 font-medium">
+                  Realizado ({latest ? latest.label : "—"})
+                </div>
+                <div className="text-base font-bold text-white mt-0.5">
+                  {latest ? `${latest.realizedKg.toFixed(1)} kg` : "—"}
+                </div>
+              </div>
+              <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2.5">
+                <div className="text-[11px] text-[var(--muted-foreground)] font-medium">
+                  Desvio (Real − Proj)
+                </div>
+                <div
+                  className={`text-base font-bold mt-0.5 ${
+                    !latest
+                      ? "text-slate-400"
+                      : latest.deltaKg <= 0
+                        ? "text-emerald-400"
+                        : "text-amber-400"
+                  }`}
+                >
+                  {latest
+                    ? `${latest.deltaKg <= 0 ? "" : "+"}${latest.deltaKg.toFixed(2)} kg`
+                    : "—"}
+                </div>
+              </div>
             </div>
-            <div className="text-sm font-bold text-white">
-              {latest ? `${latest.realizedKg.toFixed(1)} kg` : "—"}
-            </div>
-          </div>
-          <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2">
-            <div className="text-[10px] text-[var(--muted-foreground)] font-medium">Real − Proj</div>
-            <div
-              className={`text-sm font-bold ${
-                !latest
-                  ? "text-slate-400"
-                  : latest.deltaKg <= 0
-                    ? "text-emerald-400"
-                    : "text-amber-400"
-              }`}
-            >
-              {latest
-                ? `${latest.deltaKg <= 0 ? "" : "+"}${latest.deltaKg.toFixed(2)} kg`
-                : "—"}
-            </div>
-          </div>
-        </div>
 
-        {/* Main SVG Chart */}
-        <div className="relative bg-[var(--background)] border border-[var(--border)] rounded-lg p-3">
-          <div className="flex items-center justify-between text-[11px] text-[var(--muted-foreground)] mb-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="flex items-center gap-1">
-                <span className="w-2.5 h-0.5 border-b-2 border-dashed border-sky-400 inline-block" /> Projetado
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> Realizado
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2.5 h-0.5 bg-emerald-400 inline-block" /> EWMA
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="text-emerald-400 hover:text-emerald-300 text-[11px] font-medium cursor-pointer"
-            >
-              Expandir ↗
-            </button>
-          </div>
+            {/* Wide Main SVG Chart */}
+            <div className="relative bg-[var(--background)] border border-[var(--border)] rounded-xl p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted-foreground)] mb-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-0.5 border-b-2 border-dashed border-sky-400 inline-block" /> Projetado (Meta)
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> Realizado (1ª do dia)
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-0.5 bg-emerald-400 inline-block" /> Tendência EWMA
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="text-emerald-400 hover:text-emerald-300 text-xs font-medium cursor-pointer"
+                >
+                  Expandir tela cheia ↗
+                </button>
+              </div>
 
-          <ProjectedVsRealizedSvg
-            data={seriesData}
-            isModal={false}
-            startWeight={Number(settings.start_weight_kg)}
-            targetMin={Number(settings.target_weight_min_kg)}
-            targetMax={Number(settings.target_weight_max_kg)}
-            onSelectDate={handleSelectDate}
-          />
-
-          <div className="text-[10px] text-slate-400 mt-1 flex justify-between items-center">
-            <span>💡 Passe o mouse para comparar Projetado × Realizado</span>
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="text-emerald-400 font-medium hover:underline cursor-pointer"
-            >
-              Tabela dia a dia ↗
-            </button>
-          </div>
-        </div>
-
-        {/* Collapsible Day-by-Day Table right on Card */}
-        <details className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-3 text-xs">
-          <summary className="cursor-pointer text-xs font-semibold text-emerald-400">
-            📊 Ver tabela Projetado × Realizado dia a dia ({seriesData.realizedDaily.length} dia(s))
-          </summary>
-          <div className="overflow-x-auto mt-2 max-h-56 overflow-y-auto">
-            <table className="w-full text-[11px] text-left">
-              <thead className="text-[var(--muted-foreground)] border-b border-[var(--border)]">
-                <tr>
-                  <th className="py-1 pr-2">Data</th>
-                  <th className="py-1 pr-2">Proj.</th>
-                  <th className="py-1 pr-2">Real</th>
-                  <th className="py-1 pr-2">Desvio</th>
-                  <th className="py-1 pr-2">EWMA</th>
-                  <th className="py-1">Gord.</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {[...seriesData.realizedDaily].reverse().map((r) => (
-                  <tr key={r.date}>
-                    <td className="py-1 pr-2 whitespace-nowrap font-medium text-white">{r.label}</td>
-                    <td className="py-1 pr-2 text-sky-300">{r.projectedKg.toFixed(1)}</td>
-                    <td className="py-1 pr-2 font-bold text-white">{r.realizedKg.toFixed(2)}</td>
-                    <td
-                      className={`py-1 pr-2 font-bold ${
-                        r.deltaKg <= 0 ? "text-emerald-400" : "text-amber-400"
-                      }`}
-                    >
-                      {r.deltaKg <= 0 ? "" : "+"}
-                      {r.deltaKg.toFixed(2)}
-                    </td>
-                    <td className="py-1 pr-2 text-emerald-400">{r.ewmaKg.toFixed(1)}</td>
-                    <td className="py-1 text-slate-300">
-                      {r.bodyFatPct !== null ? `${r.bodyFatPct.toFixed(1)}%` : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </details>
-
-        {/* Manual weigh-in + deficit slider */}
-        <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-3.5 space-y-2.5">
-          <div className="text-xs font-medium text-[var(--foreground)]">
-            Lançar Pesagem Manual por Data (Supabase):
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="date"
-              value={dateInput}
-              onChange={(e) => setDateInput(e.target.value)}
-              className="bg-[var(--card)] border border-[var(--border)] rounded px-2.5 py-1.5 text-xs text-[var(--foreground)]"
-            />
-            <input
-              type="number"
-              step="0.1"
-              value={weightInput}
-              onChange={(e) => setWeightInput(e.target.value)}
-              className="w-24 bg-[var(--card)] border border-[var(--border)] rounded px-2.5 py-1.5 text-xs text-[var(--foreground)] font-semibold"
-              placeholder="86.0"
-            />
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => void handleSaveManual()}
-              className="px-3 py-1.5 rounded text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition disabled:opacity-50 cursor-pointer"
-            >
-              {saving ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-          {feedback ? <div className="text-xs text-emerald-400 font-medium">{feedback}</div> : null}
-
-          <div className="flex items-center justify-between pt-2 border-t border-[var(--border)] text-xs">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[var(--muted-foreground)] text-[11px]">Déficit Projetado:</span>
-              <span className="font-bold text-emerald-400">{simDeficit} kcal/dia</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="range"
-                min={300}
-                max={800}
-                step={10}
-                value={simDeficit}
-                onChange={(e) => onDeficitChange(Number(e.target.value))}
-                className="w-24 sm:w-28 accent-emerald-500 cursor-pointer"
+              <ProjectedVsRealizedSvg
+                data={seriesData}
+                isModal={false}
+                startWeight={Number(settings.start_weight_kg)}
+                targetMin={Number(settings.target_weight_min_kg)}
+                targetMax={Number(settings.target_weight_max_kg)}
+                onSelectDate={handleSelectDate}
               />
-              <button
-                type="button"
-                onClick={() => setModalOpen(true)}
-                className="text-[11px] text-emerald-400 hover:underline cursor-pointer"
-              >
-                Simular ↗
-              </button>
+
+              <div className="text-[11px] text-slate-400 mt-1.5 flex flex-wrap justify-between items-center gap-2">
+                <span>💡 Passe o mouse ou clique em qualquer dia para inspecionar Projetado × Realizado</span>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="text-emerald-400 font-medium hover:underline cursor-pointer"
+                >
+                  Abrir simulador completo ↗
+                </button>
+              </div>
             </div>
+
+            {/* Manual weigh-in + deficit slider side by side */}
+            <div className="bg-[var(--background)] border border-[var(--border)] rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="text-xs font-medium text-[var(--foreground)]">
+                  Lançar Pesagem Manual por Data (Supabase):
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="date"
+                    value={dateInput}
+                    onChange={(e) => setDateInput(e.target.value)}
+                    className="bg-[var(--card)] border border-[var(--border)] rounded px-2.5 py-1.5 text-xs text-[var(--foreground)]"
+                  />
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={weightInput}
+                    onChange={(e) => setWeightInput(e.target.value)}
+                    className="w-24 bg-[var(--card)] border border-[var(--border)] rounded px-2.5 py-1.5 text-xs text-[var(--foreground)] font-semibold"
+                    placeholder="86.0"
+                  />
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => void handleSaveManual()}
+                    className="px-3.5 py-1.5 rounded text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {saving ? "Salvando..." : "Salvar"}
+                  </button>
+                </div>
+                {feedback ? <div className="text-xs text-emerald-400 font-medium">{feedback}</div> : null}
+              </div>
+
+              <div className="md:border-l md:border-[var(--border)] md:pl-4 space-y-1.5 min-w-[210px]">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[var(--muted-foreground)]">Déficit Projetado:</span>
+                  <span className="font-bold text-emerald-400">{simDeficit} kcal/dia</span>
+                </div>
+                <input
+                  type="range"
+                  min={300}
+                  max={800}
+                  step={10}
+                  value={simDeficit}
+                  onChange={(e) => onDeficitChange(Number(e.target.value))}
+                  className="w-full accent-emerald-500 cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-[var(--muted-foreground)]">
+                  <span>300 kcal</span>
+                  <span>Dieta: {intakeKcal} kcal</span>
+                  <span>800 kcal</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Collapsible Day-by-Day Table */}
+            <details className="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3.5 text-xs">
+              <summary className="cursor-pointer text-xs font-semibold text-emerald-400">
+                📊 Ver tabela Projetado × Realizado dia a dia ({seriesData.realizedDaily.length} dia(s))
+              </summary>
+              <div className="overflow-x-auto mt-2.5 max-h-64 overflow-y-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="text-[11px] text-[var(--muted-foreground)] border-b border-[var(--border)]">
+                    <tr>
+                      <th className="py-1.5 pr-3">Data</th>
+                      <th className="py-1.5 pr-3">Projetado</th>
+                      <th className="py-1.5 pr-3">Realizado</th>
+                      <th className="py-1.5 pr-3">Desvio</th>
+                      <th className="py-1.5 pr-3">EWMA</th>
+                      <th className="py-1.5 pr-3">Gordura</th>
+                      <th className="py-1.5">Músculo</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    {[...seriesData.realizedDaily].reverse().map((r) => (
+                      <tr key={r.date}>
+                        <td className="py-1.5 pr-3 whitespace-nowrap font-medium text-white">{r.fullDateBR}</td>
+                        <td className="py-1.5 pr-3 text-sky-300">{r.projectedKg.toFixed(2)} kg</td>
+                        <td className="py-1.5 pr-3 font-bold text-white">{r.realizedKg.toFixed(2)} kg</td>
+                        <td
+                          className={`py-1.5 pr-3 font-bold ${
+                            r.deltaKg <= 0 ? "text-emerald-400" : "text-amber-400"
+                          }`}
+                        >
+                          {r.deltaKg <= 0 ? "" : "+"}
+                          {r.deltaKg.toFixed(2)} kg
+                        </td>
+                        <td className="py-1.5 pr-3 text-emerald-400">{r.ewmaKg.toFixed(2)} kg</td>
+                        <td className="py-1.5 pr-3 text-slate-300">
+                          {r.bodyFatPct !== null ? `${r.bodyFatPct.toFixed(1)}%` : "—"}
+                        </td>
+                        <td className="py-1.5 text-slate-300">
+                          {r.muscleKg !== null ? `${r.muscleKg.toFixed(1)} kg` : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </div>
+
+          {/* Right 4 cols: Xiaomi Mi Body Composition Scale 2 (aligned to top, no stretching) */}
+          <div className="lg:col-span-4">
+            <XiaomiScalePanel
+              settings={settings}
+              scaleMeasurements={scaleMeasurements}
+              onSyncMeasurements={onSyncScaleMeasurements}
+              onDeleteMeasurement={onDeleteScaleMeasurement}
+              onSaveProfile={onSaveBodyProfile}
+            />
           </div>
         </div>
-
-        {/* Xiaomi Mi Body Composition Scale 2 (Web Bluetooth + Supabase Sync) */}
-        <XiaomiScalePanel
-          settings={settings}
-          scaleMeasurements={scaleMeasurements}
-          onSyncMeasurements={onSyncScaleMeasurements}
-          onDeleteMeasurement={onDeleteScaleMeasurement}
-          onSaveProfile={onSaveBodyProfile}
-        />
-      </div>
+      </section>
 
       {/* Maximized Modal */}
       {modalOpen ? (
