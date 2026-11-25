@@ -118,7 +118,7 @@ npm run dev
 npm run build
 ```
 
-- **Publicação:** alterações enviadas para a branch `main` (ou publicadas via Vercel CLI com `npx vercel --prod --yes`) atualizam `https://painel-nutricional.vercel.app`.
+- **Publicação:** o projeto `painel-nutricional` na Vercel está conectado ao repositório GitHub (Settings → Git). Todo push na branch `main` gera deploy de produção automático em `https://painel-nutricional.vercel.app`; branches/PRs geram *preview deployments*. A Vercel CLI (`npx vercel --prod --yes`) fica apenas como alternativa manual.
 - **Atenção ao editar:** preservar sempre a validação server-side em `getAuthedContext()`, manter RLS intacta no Supabase, não expor `pin_hash` nem variáveis de servidor ao cliente e nunca versionar `.env.local`.
 
 ---
