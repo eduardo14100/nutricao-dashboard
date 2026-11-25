@@ -1,0 +1,632 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  CHR_BODY_COMP_MEAS,
+  CHR_CURRENT_TIME,
+  CHR_HISTORY,
+  computeBodyComposition,
+  parseScaleRecord,
+  SVC_BODY_COMP,
+  SVC_CURRENT_TIME,
+  type ParsedBleRecord,
+  type ScaleMeasurementDTO,
+  type ScaleProfile,
+} from "@/data/scale";
+import type { UserSettingsDTO } from "@/data/nutrition";
+
+interface XiaomiScalePanelProps {
+  settings: UserSettingsDTO;
+  scaleMeasurements: ScaleMeasurementDTO[];
+  onSyncMeasurements: (
+    measurements: Array<{
+      measured_at: string;
+      weight_kg: number;
+      impedance_ohm: number | null;
+      source: "ble-live" | "ble-history" | "manual";
+    }>
+  ) => Promise<number>;
+  onDeleteMeasurement: (id: number) => Promise<void>;
+  onSaveProfile: (profile: {
+    height_cm: number;
+    age_years: number;
+    sex: 0 | 1;
+    scale_user_id?: number;
+  }) => Promise<void>;
+}
+
+// Minimal Web Bluetooth typings so TypeScript strict mode works without extra @types packages
+interface BleCharacteristicLike extends EventTarget {
+  value?: DataView;
+  startNotifications(): Promise<BleCharacteristicLike>;
+  writeValueWithResponse(value: BufferSource): Promise<void>;
+}
+interface BleServiceLike {
+  getCharacteristic(uuid: number | string): Promise<BleCharacteristicLike>;
+}
+interface BleGattServerLike {
+  connect(): Promise<BleGattServerLike>;
+  getPrimaryService(uuid: number | string): Promise<BleServiceLike>;
+}
+interface BleDeviceLike extends EventTarget {
+  gatt?: BleGattServerLike;
+}
+interface WebBluetoothLike {
+  requestDevice(options: {
+    filters: Array<{ namePrefix?: string; services?: number[] }>;
+    optionalServices?: number[];
+  }): Promise<BleDeviceLike>;
+}
+
+function fmt(v: number | null | undefined, digits = 1): string {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  return Number(v).toFixed(digits).replace(".", ",");
+}
+
+export default function XiaomiScalePanel({
+  settings,
+  scaleMeasurements,
+  onSyncMeasurements,
+  onDeleteMeasurement,
+  onSaveProfile,
+}: XiaomiScalePanelProps) {
+  const [status, setStatus] = useState<{ text: string; tone: "ok" | "warn" | "err" | "info" }>({
+    text: "Suba na balança e toque em conectar (Chrome no Android ou desktop).",
+    tone: "info",
+  });
+  const [connected, setConnected] = useState(false);
+  const [liveWeight, setLiveWeight] = useState<string>("—");
+  const [liveFlag, setLiveFlag] = useState<string>("");
+  const [syncing, setSyncing] = useState(false);
+
+  const [heightInput, setHeightInput] = useState<string>(String(settings.height_cm ?? 181));
+  const [ageInput, setAgeInput] = useState<string>(String(settings.age_years ?? 33));
+  const [sexInput, setSexInput] = useState<string>(String(settings.sex ?? 1));
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Manual bioimpedance entry (handy for iPhone / non-BLE browsers)
+  const [manualDate, setManualDate] = useState<string>(() =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date())
+  );
+  const [manualWeight, setManualWeight] = useState<string>("");
+  const [manualImpedance, setManualImpedance] = useState<string>("");
+
+  const lastLiveKeyRef = useRef<string>("");
+  const historyBufferRef = useRef<ParsedBleRecord[]>([]);
+
+  useEffect(() => {
+    setHeightInput(String(settings.height_cm ?? 181));
+    setAgeInput(String(settings.age_years ?? 33));
+    setSexInput(String(settings.sex ?? 1));
+  }, [settings.height_cm, settings.age_years, settings.sex]);
+
+  useEffect(() => {
+    const nav = navigator as Navigator & { bluetooth?: WebBluetoothLike };
+    if (typeof navigator !== "undefined" && !nav.bluetooth) {
+      setStatus({
+        text: "⚠️ Bluetooth Web indisponível neste navegador. Use o Chrome no Android/PC ou registre manualmente abaixo.",
+        tone: "warn",
+      });
+    }
+  }, []);
+
+  const profile: ScaleProfile = useMemo(
+    () => ({
+      height_cm: settings.height_cm ?? 181,
+      age_years: settings.age_years ?? 33,
+      sex: settings.sex === 0 ? 0 : 1,
+    }),
+    [settings.height_cm, settings.age_years, settings.sex]
+  );
+
+  // Latest measurement for body composition card
+  const latestMeasurement = scaleMeasurements[0] ?? null;
+  const latestComp = useMemo(() => {
+    if (!latestMeasurement) return null;
+    return computeBodyComposition(
+      Number(latestMeasurement.weight_kg),
+      latestMeasurement.impedance_ohm,
+      profile
+    );
+  }, [latestMeasurement, profile]);
+
+  // Track which measurement ID is the FIRST of each day (jejum) so we can badge it in history
+  const firstOfDayIds = useMemo(() => {
+    const byDate = new Map<string, { id: number; measured_at: string }>();
+    for (const m of scaleMeasurements) {
+      const cur = byDate.get(m.measured_date);
+      if (!cur || m.measured_at < cur.measured_at) {
+        byDate.set(m.measured_date, { id: m.id, measured_at: m.measured_at });
+      }
+    }
+    return new Set(Array.from(byDate.values()).map((v) => v.id));
+  }, [scaleMeasurements]);
+
+  const ensureScaleUserId = async (): Promise<number> => {
+    if (settings.scale_user_id && settings.scale_user_id > 0) {
+      return settings.scale_user_id;
+    }
+    const generated = 1 + Math.floor(Math.random() * 65000);
+    await onSaveProfile({
+      height_cm: profile.height_cm,
+      age_years: profile.age_years,
+      sex: profile.sex,
+      scale_user_id: generated,
+    });
+    return generated;
+  };
+
+  const commitBatch = async (
+    records: ParsedBleRecord[],
+    source: "ble-live" | "ble-history"
+  ): Promise<number> => {
+    if (records.length === 0) return 0;
+    setSyncing(true);
+    try {
+      const payload = records.map((r) => ({
+        measured_at: r.measured_at.toISOString(),
+        weight_kg: r.weight_kg,
+        impedance_ohm: r.impedance_ohm,
+        source,
+      }));
+      return await onSyncMeasurements(payload);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleConnect = async () => {
+    const nav = navigator as Navigator & { bluetooth?: WebBluetoothLike };
+    if (!nav.bluetooth) {
+      setStatus({
+        text: "❌ Este navegador não suporta Web Bluetooth. Abra no Chrome do Android ou Chrome/Edge no computador.",
+        tone: "err",
+      });
+      return;
+    }
+
+    try {
+      setStatus({
+        text: 'Suba na balança para acordá-la e selecione "MIBFS" na lista…',
+        tone: "info",
+      });
+      const dev = await nav.bluetooth.requestDevice({
+        filters: [
+          { namePrefix: "MIBFS" },
+          { namePrefix: "MIBCS" },
+          { namePrefix: "MI_SCALE" },
+          { services: [SVC_BODY_COMP] },
+        ],
+        optionalServices: [SVC_BODY_COMP, SVC_CURRENT_TIME],
+      });
+
+      dev.addEventListener("gattserverdisconnected", () => {
+        setConnected(false);
+        setStatus({
+          text: "Balança desconectada (ela desliga sozinha após alguns segundos). Clique em conectar novamente quando quiser.",
+          tone: "warn",
+        });
+      });
+
+      setStatus({ text: "Conectando à balança Xiaomi…", tone: "info" });
+      if (!dev.gatt) throw new Error("GATT indisponível no dispositivo.");
+      const server = await dev.gatt.connect();
+
+      // Sync scale clock (best effort)
+      try {
+        const timeSvc = await server.getPrimaryService(SVC_CURRENT_TIME);
+        const timeChr = await timeSvc.getCharacteristic(CHR_CURRENT_TIME);
+        const n = new Date();
+        const buf = new Uint8Array([
+          n.getFullYear() & 0xff,
+          n.getFullYear() >> 8,
+          n.getMonth() + 1,
+          n.getDate(),
+          n.getHours(),
+          n.getMinutes(),
+          n.getSeconds(),
+          ((n.getDay() + 6) % 7) + 1,
+          0,
+          0,
+        ]);
+        await timeChr.writeValueWithResponse(buf);
+      } catch {
+        // Optional firmware service
+      }
+
+      const svc = await server.getPrimaryService(SVC_BODY_COMP);
+
+      // 1) Live measurements
+      try {
+        const live = await svc.getCharacteristic(CHR_BODY_COMP_MEAS);
+        live.addEventListener("characteristicvaluechanged", (evt: Event) => {
+          const target = evt.target as BleCharacteristicLike | null;
+          const dv = target?.value;
+          if (!dv || dv.byteLength < 13) return;
+          const rec = parseScaleRecord(dv, 0);
+          setLiveWeight(fmt(rec.weight_kg, 2));
+          setLiveFlag(
+            rec.removed
+              ? "Pesagem finalizada"
+              : rec.stabilized
+                ? rec.impedance_ohm
+                  ? "Estável ✓ (com bioimpedância)"
+                  : "Estável – aguardando bioimpedância… (fique descalço)"
+                : "Medindo…"
+          );
+
+          if (rec.stabilized && (rec.impedance_ohm || rec.removed)) {
+            const key = `${rec.weight_kg}|${rec.impedance_ohm ?? "none"}`;
+            if (key === lastLiveKeyRef.current) return;
+            lastLiveKeyRef.current = key;
+            void commitBatch([rec], "ble-live").then((added) => {
+              if (added > 0) {
+                setStatus({
+                  text: `✅ Pesagem de ${fmt(rec.weight_kg, 2)} kg salva no Supabase e cruzada no gráfico Projetado × Realizado!`,
+                  tone: "ok",
+                });
+              }
+            });
+          }
+        });
+        await live.startNotifications();
+      } catch (e) {
+        console.warn("Medição ao vivo indisponível:", e);
+      }
+
+      // 2) Stored scale memory history
+      try {
+        const hist = await svc.getCharacteristic(CHR_HISTORY);
+        const userId = await ensureScaleUserId();
+
+        hist.addEventListener("characteristicvaluechanged", (evt: Event) => {
+          const target = evt.target as BleCharacteristicLike | null;
+          const dv = target?.value;
+          if (!dv) return;
+          if (dv.byteLength === 1 && dv.getUint8(0) === 0x03) {
+            const batch = [...historyBufferRef.current];
+            historyBufferRef.current = [];
+            void commitBatch(batch, "ble-history").then(async (added) => {
+              try {
+                await hist.writeValueWithResponse(new Uint8Array([0x03]));
+                await hist.writeValueWithResponse(
+                  new Uint8Array([0x04, 0xff, 0xff, (userId >> 8) & 0xff, userId & 0xff])
+                );
+              } catch {
+                // Ignore ack error
+              }
+              setStatus({
+                text:
+                  added > 0
+                    ? `✅ ${added} pesagem(ns) da memória da balança salva(s) no Supabase e cruzada(s) no gráfico!`
+                    : "☁️ Histórico da balança já estava sincronizado (nenhuma pesagem nova).",
+                tone: "ok",
+              });
+            });
+            return;
+          }
+          for (let off = 0; off + 13 <= dv.byteLength; off += 13) {
+            const rec = parseScaleRecord(dv, off);
+            if (rec.weight_kg > 0) historyBufferRef.current.push(rec);
+          }
+        });
+
+        await hist.writeValueWithResponse(
+          new Uint8Array([0x01, 0xff, 0xff, (userId >> 8) & 0xff, userId & 0xff])
+        );
+        await hist.startNotifications();
+        historyBufferRef.current = [];
+        await hist.writeValueWithResponse(new Uint8Array([0x02]));
+      } catch (e) {
+        console.warn("Histórico da balança indisponível:", e);
+      }
+
+      setConnected(true);
+      setStatus({
+        text: "Conectada! Fique parado e descalço na balança até estabilizar — os dados vão direto para o Supabase.",
+        tone: "ok",
+      });
+    } catch (e: unknown) {
+      const err = e as { name?: string; message?: string };
+      if (err?.name === "NotFoundError") {
+        setStatus({ text: "Nenhuma balança selecionada.", tone: "warn" });
+      } else {
+        setStatus({ text: `❌ Erro: ${err?.message ?? String(e)}`, tone: "err" });
+      }
+    }
+  };
+
+  const handleSaveProfileClick = async () => {
+    const h = parseInt(heightInput, 10) || 181;
+    const age = parseInt(ageInput, 10) || 33;
+    const sex: 0 | 1 = sexInput === "0" ? 0 : 1;
+    setSavingProfile(true);
+    try {
+      await onSaveProfile({ height_cm: h, age_years: age, sex });
+      setStatus({
+        text: "✅ Perfil salvo no Supabase — composição corporal recalculada!",
+        tone: "ok",
+      });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleManualScaleSubmit = async () => {
+    const w = parseFloat(manualWeight);
+    if (Number.isNaN(w) || w < 20 || w > 250) return;
+    const imp = manualImpedance.trim() ? parseInt(manualImpedance, 10) : null;
+    const measuredAt = new Date(`${manualDate}T07:30:00-03:00`).toISOString();
+    setSyncing(true);
+    try {
+      const added = await onSyncMeasurements([
+        {
+          measured_at: measuredAt,
+          weight_kg: w,
+          impedance_ohm: imp && imp > 0 && imp < 3000 ? imp : null,
+          source: "manual",
+        },
+      ]);
+      setManualWeight("");
+      setManualImpedance("");
+      setStatus({
+        text:
+          added > 0
+            ? `✅ Medição de ${fmt(w, 2)} kg salva no Supabase e cruzada no gráfico!`
+            : "ℹ️ Medição duplicada ignorada (já existe registro muito próximo).",
+        tone: "ok",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const statusColor =
+    status.tone === "ok"
+      ? "text-emerald-400"
+      : status.tone === "warn"
+        ? "text-amber-400"
+        : status.tone === "err"
+          ? "text-rose-400"
+          : "text-[var(--muted-foreground)]";
+
+  return (
+    <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-3.5 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--foreground)]">
+            <span>⚖️ Balança Xiaomi Mi Body Composition Scale 2</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Supabase
+            </span>
+          </div>
+          <div className={`text-[11px] mt-0.5 ${statusColor}`}>
+            {syncing ? "⏳ Sincronizando medição com o Supabase..." : status.text}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => void handleConnect()}
+          className="shrink-0 px-3 py-1.5 rounded text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition cursor-pointer"
+        >
+          {connected ? "✅ Conectada" : "🔗 Conectar balança"}
+        </button>
+      </div>
+
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-bold text-emerald-400">
+          {liveWeight !== "—" ? liveWeight : latestMeasurement ? fmt(Number(latestMeasurement.weight_kg), 2) : "—"}
+        </span>
+        <span className="text-xs text-[var(--muted-foreground)]">kg</span>
+        <span className="text-[11px] text-[var(--muted-foreground)] ml-auto">{liveFlag}</span>
+      </div>
+
+      {/* 9-card body composition grid */}
+      {latestMeasurement && latestComp ? (
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              ["Peso", `${fmt(Number(latestMeasurement.weight_kg), 2)} kg`],
+              ["IMC", fmt(latestComp.bmi)],
+              ["Gordura", latestComp.body_fat_pct !== null ? `${fmt(latestComp.body_fat_pct)} %` : "—"],
+              ["Massa gorda", latestComp.fat_mass_kg !== null ? `${fmt(latestComp.fat_mass_kg)} kg` : "—"],
+              ["Músculo", latestComp.muscle_kg !== null ? `${fmt(latestComp.muscle_kg)} kg` : "—"],
+              ["Água", latestComp.water_pct !== null ? `${fmt(latestComp.water_pct)} %` : "—"],
+              ["Massa óssea", latestComp.bone_kg !== null ? `${fmt(latestComp.bone_kg)} kg` : "—"],
+              ["Gord. visceral", latestComp.visceral_fat !== null ? fmt(latestComp.visceral_fat, 0) : "—"],
+              ["Impedância", latestMeasurement.impedance_ohm ? `${latestMeasurement.impedance_ohm} Ω` : "—"],
+            ].map(([label, val]) => (
+              <div key={label} className="bg-[var(--card)] border border-[var(--border)] rounded p-2">
+                <div className="text-[10px] text-[var(--muted-foreground)]">{label}</div>
+                <div className="text-sm font-semibold text-[var(--foreground)]">{val}</div>
+              </div>
+            ))}
+          </div>
+          <div className="text-[10px] text-[var(--muted-foreground)]">
+            Última pesagem salva:{" "}
+            {new Date(latestMeasurement.measured_at).toLocaleDateString("pt-BR")}{" "}
+            {new Date(latestMeasurement.measured_at).toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+            {latestMeasurement.impedance_ohm
+              ? " • com bioimpedância"
+              : " • sem bioimpedância (pise descalço para medir gordura)"}
+          </div>
+        </>
+      ) : (
+        <div className="text-[11px] text-[var(--muted-foreground)]">
+          Nenhuma medição da balança sincronizada ainda. Conecte via Bluetooth ou adicione uma medição abaixo para cruzar com a curva projetada!
+        </div>
+      )}
+
+      {/* Profile settings synced to Supabase */}
+      <details className="text-xs">
+        <summary className="cursor-pointer text-[11px] text-emerald-400">
+          Perfil para cálculo de gordura / músculo ({profile.height_cm} cm • {profile.age_years} anos •{" "}
+          {profile.sex === 1 ? "Masc." : "Fem."})
+        </summary>
+        <div className="flex flex-wrap items-end gap-2 pt-2">
+          <label className="text-[10px] text-[var(--muted-foreground)]">
+            Altura (cm)
+            <input
+              type="number"
+              step={1}
+              value={heightInput}
+              onChange={(e) => setHeightInput(e.target.value)}
+              className="block w-20 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+            />
+          </label>
+          <label className="text-[10px] text-[var(--muted-foreground)]">
+            Idade
+            <input
+              type="number"
+              step={1}
+              value={ageInput}
+              onChange={(e) => setAgeInput(e.target.value)}
+              className="block w-16 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+            />
+          </label>
+          <label className="text-[10px] text-[var(--muted-foreground)]">
+            Sexo
+            <select
+              value={sexInput}
+              onChange={(e) => setSexInput(e.target.value)}
+              className="block bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+            >
+              <option value="1">Masculino</option>
+              <option value="0">Feminino</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            disabled={savingProfile}
+            onClick={() => void handleSaveProfileClick()}
+            className="px-3 py-1 rounded text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 disabled:opacity-50 cursor-pointer"
+          >
+            {savingProfile ? "Salvando..." : "Salvar"}
+          </button>
+        </div>
+      </details>
+
+      {/* Manual bioimpedance fallback (for iPhone / manual sync) */}
+      <details className="text-xs">
+        <summary className="cursor-pointer text-[11px] text-sky-400">
+          ➕ Registrar leitura manual da balança (com impedância opcional)
+        </summary>
+        <div className="flex flex-wrap items-end gap-2 pt-2">
+          <label className="text-[10px] text-[var(--muted-foreground)]">
+            Data
+            <input
+              type="date"
+              value={manualDate}
+              onChange={(e) => setManualDate(e.target.value)}
+              className="block bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+            />
+          </label>
+          <label className="text-[10px] text-[var(--muted-foreground)]">
+            Peso (kg)
+            <input
+              type="number"
+              step="0.05"
+              placeholder="86.10"
+              value={manualWeight}
+              onChange={(e) => setManualWeight(e.target.value)}
+              className="block w-24 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+            />
+          </label>
+          <label className="text-[10px] text-[var(--muted-foreground)]">
+            Impedância (Ω)
+            <input
+              type="number"
+              step="1"
+              placeholder="Opcional"
+              value={manualImpedance}
+              onChange={(e) => setManualImpedance(e.target.value)}
+              className="block w-24 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+            />
+          </label>
+          <button
+            type="button"
+            disabled={syncing || !manualWeight}
+            onClick={() => void handleManualScaleSubmit()}
+            className="px-3 py-1 rounded text-xs font-semibold bg-sky-500 text-slate-950 hover:bg-sky-400 disabled:opacity-50 cursor-pointer"
+          >
+            Salvar
+          </button>
+        </div>
+      </details>
+
+      {/* Scale History Table (from Supabase) */}
+      <details className="text-xs">
+        <summary className="cursor-pointer text-[11px] text-emerald-400">
+          Histórico da balança no Supabase ({scaleMeasurements.length} leitura(s) • 1ª do dia vai para o gráfico)
+        </summary>
+        <div className="overflow-x-auto mt-2">
+          <table className="w-full text-[11px]">
+            <thead className="text-[var(--muted-foreground)]">
+              <tr>
+                <th className="text-left py-1">Data / Hora</th>
+                <th className="text-left py-1">Peso</th>
+                <th className="text-left py-1">Gordura</th>
+                <th className="text-left py-1">Músculo</th>
+                <th className="text-right py-1"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {scaleMeasurements.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-1.5 text-[var(--muted-foreground)]">
+                    Sem registros da balança ainda.
+                  </td>
+                </tr>
+              ) : (
+                scaleMeasurements.slice(0, 15).map((m) => {
+                  const c = computeBodyComposition(Number(m.weight_kg), m.impedance_ohm, profile);
+                  const d = new Date(m.measured_at);
+                  const isFirst = firstOfDayIds.has(m.id);
+                  return (
+                    <tr key={m.id} className="border-t border-[var(--border)]">
+                      <td className="py-1 pr-2 whitespace-nowrap">
+                        {d.toLocaleDateString("pt-BR")}{" "}
+                        {d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        {isFirst ? (
+                          <span
+                            title="Primeira pesagem do dia (usada no gráfico Projetado × Realizado)"
+                            className="ml-1 text-[9px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold"
+                          >
+                            1ª
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="py-1 pr-2 font-semibold">{fmt(Number(m.weight_kg), 2)}</td>
+                      <td className="py-1 pr-2">
+                        {c.body_fat_pct !== null ? `${fmt(c.body_fat_pct)}%` : "—"}
+                      </td>
+                      <td className="py-1 pr-2">{c.muscle_kg !== null ? fmt(c.muscle_kg) : "—"}</td>
+                      <td className="py-1 text-right">
+                        <button
+                          type="button"
+                          onClick={() => void onDeleteMeasurement(m.id)}
+                          title="Excluir leitura"
+                          className="text-rose-400 hover:underline cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  );
+}
