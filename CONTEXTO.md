@@ -10,7 +10,7 @@ Este documento consolida a arquitetura, estrutura de arquivos, banco de dados, r
 - **Produção (Vercel + Supabase):** [https://painel-nutricional.vercel.app](https://painel-nutricional.vercel.app)
 - **Projeto na Vercel:** `painel-nutricional`
 - **Repositório GitHub:** `eduardo14100/nutricao-dashboard` (branch principal: `main`)
-  - O arquivo `index.html` na raiz mantém um redirecionamento automático do antigo endereço do GitHub Pages para `https://painel-nutricional.vercel.app/`.
+  - O GitHub Pages foi desativado (25/11/2026); o único endereço oficial é `https://painel-nutricional.vercel.app/`.
 - **Banco de Dados (Supabase):** projeto `painel-nutricional` (região `sa-east-1`, São Paulo).
 
 ---

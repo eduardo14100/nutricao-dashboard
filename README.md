@@ -11,7 +11,6 @@ Painel pessoal de acompanhamento nutricional (protocolo cutting 2026) com banco 
 
 ## Acesso online
 - **Produção (Vercel + Supabase):** [https://painel-nutricional.vercel.app](https://painel-nutricional.vercel.app)
-- **Link antigo (GitHub Pages):** redireciona automaticamente para a versão na Vercel via `index.html`.
 
 ## Desenvolvimento local
 1. Copie `.env.example` para `.env.local` e preencha as variáveis do Supabase e `SESSION_SECRET`.
