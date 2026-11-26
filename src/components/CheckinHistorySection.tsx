@@ -139,14 +139,14 @@ export default function CheckinHistorySection({
 
   return (
     <div className="space-y-6">
-      <section className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <section className="surface-card rounded-2xl p-5 sm:p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/[0.06] pb-4">
           <div>
-            <h2 className="text-lg font-semibold text-[var(--foreground)]">
-              📝 Check-in Diário (Peso, Alimentação e Sensações)
+            <h2 className="heading-section text-base sm:text-lg font-semibold text-white">
+              Check-in Diário — Peso, Alimentação e Sensações
             </h2>
-            <p className="text-xs text-[var(--muted-foreground)]">
-              Salve seu registro direto no <b>Supabase</b> (atualiza automaticamente a curva EWMA e o histórico) ou copie o relatório formatado para o chat.
+            <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+              Salve direto no Supabase (atualiza a curva EWMA e o histórico) ou copie o relatório formatado.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -154,51 +154,51 @@ export default function CheckinHistorySection({
               type="button"
               disabled={saving}
               onClick={() => void handleSave()}
-              className="px-4 py-2 rounded-lg text-xs font-bold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 disabled:opacity-50 transition cursor-pointer"
+              className="btn-press h-9 px-4 rounded-xl text-xs font-semibold bg-emerald-500 text-[#032014] hover:bg-emerald-400 disabled:opacity-50 cursor-pointer"
             >
-              {saving ? "Salvando..." : "💾 Salvar Check-in no Supabase"}
+              {saving ? "Salvando..." : "Salvar Check-in"}
             </button>
             <button
               type="button"
               onClick={() => void handleCopy(previewText, "current")}
-              className="px-3.5 py-2 rounded-lg text-xs font-semibold border border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:opacity-90 transition cursor-pointer"
+              className="btn-press h-9 px-3.5 rounded-xl text-xs font-medium border border-white/[0.08] bg-white/[0.03] text-slate-200 hover:bg-white/[0.07] cursor-pointer"
             >
-              {copiedId === "current" ? "✅ Copiado!" : "📋 Copiar Relatório"}
+              {copiedId === "current" ? "Copiado ✓" : "Copiar Relatório"}
             </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
-            <label className="block text-xs text-[var(--muted-foreground)] mb-1">Data do Registro</label>
+            <label className="block text-xs text-[var(--muted-foreground)] mb-1.5">Data do registro</label>
             <input
               type="date"
               value={activeDate}
               onChange={(e) => {
                 if (e.target.value) onSelectActiveDate(e.target.value);
               }}
-              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--foreground)]"
+              className="input-field w-full h-9 rounded-lg px-3 text-xs font-mono tabular-nums"
             />
           </div>
           <div>
-            <label className="block text-xs text-[var(--muted-foreground)] mb-1">Peso em Jejum (kg)</label>
+            <label className="block text-xs text-[var(--muted-foreground)] mb-1.5">Peso em jejum (kg)</label>
             <input
               type="number"
               step="0.1"
               value={weightStr}
               onChange={(e) => setWeightStr(e.target.value)}
               placeholder="Ex: 86.2"
-              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--foreground)] font-semibold"
+              className="input-field w-full h-9 rounded-lg px-3 text-xs font-mono font-semibold tabular-nums"
             />
           </div>
           <div>
-            <label className="block text-xs text-[var(--muted-foreground)] mb-1">
-              Fome no Dia (1=Zero, 10=Muita)
+            <label className="block text-xs text-[var(--muted-foreground)] mb-1.5">
+              Fome no dia (1–10)
             </label>
             <select
               value={hungerScore}
               onChange={(e) => setHungerScore(Number(e.target.value))}
-              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--foreground)]"
+              className="input-field w-full h-9 rounded-lg px-2.5 text-xs"
             >
               {HUNGER_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -208,13 +208,13 @@ export default function CheckinHistorySection({
             </select>
           </div>
           <div>
-            <label className="block text-xs text-[var(--muted-foreground)] mb-1">
-              Energia no Treino 18h (1-10)
+            <label className="block text-xs text-[var(--muted-foreground)] mb-1.5">
+              Energia no treino (1–10)
             </label>
             <select
               value={energyScore}
               onChange={(e) => setEnergyScore(Number(e.target.value))}
-              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--foreground)]"
+              className="input-field w-full h-9 rounded-lg px-2.5 text-xs"
             >
               {ENERGY_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -224,11 +224,11 @@ export default function CheckinHistorySection({
             </select>
           </div>
           <div>
-            <label className="block text-xs text-[var(--muted-foreground)] mb-1">Sono &amp; Digestão</label>
+            <label className="block text-xs text-[var(--muted-foreground)] mb-1.5">Sono &amp; digestão</label>
             <select
               value={digestion}
               onChange={(e) => setDigestion(e.target.value)}
-              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--foreground)]"
+              className="input-field w-full h-9 rounded-lg px-2.5 text-xs"
             >
               {DIGESTION_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -240,49 +240,49 @@ export default function CheckinHistorySection({
         </div>
 
         <div>
-          <label className="block text-xs text-[var(--muted-foreground)] mb-1">
-            O que comeu hoje / Trocas / Furos na dieta (escreva livremente)
+          <label className="block text-xs text-[var(--muted-foreground)] mb-1.5">
+            Alimentação, trocas ou observações do dia
           </label>
           <input
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Ex: Segui 100% o Plano A, mas no almoço comi 120g de arroz branco e à noite tomei 1 taça de vinho..."
-            className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--foreground)]"
+            placeholder="Ex: Segui 100% o Plano A, mas no almoço troquei arroz por 120g de batata doce..."
+            className="input-field w-full h-9 rounded-lg px-3 text-xs"
           />
         </div>
 
-        <div className="p-3.5 rounded-lg border border-[var(--border)] bg-[var(--background)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <pre className="text-xs text-[var(--muted-foreground)] whitespace-pre-wrap font-mono">
+        <div className="rounded-xl bg-[#090c11] border border-white/[0.06] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <pre className="text-[11px] leading-relaxed text-[var(--muted-foreground)] whitespace-pre-wrap font-mono tabular-nums">
             {previewText}
           </pre>
           {savedToast ? (
-            <span className="text-xs font-semibold text-emerald-400 shrink-0">{savedToast}</span>
+            <span className="text-xs font-semibold text-emerald-400 shrink-0 content-swap">{savedToast}</span>
           ) : null}
         </div>
       </section>
 
-      <section className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[var(--border)] pb-3">
+      <section className="surface-card rounded-2xl p-5 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-white/[0.06] pb-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-[var(--foreground)]">
-                📚 Histórico de Check-ins Salvos (Supabase)
+            <div className="flex items-center gap-2.5">
+              <h2 className="heading-section text-base sm:text-lg font-semibold text-white">
+                Histórico de Check-ins
               </h2>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">
+              <span className="text-[11px] font-mono tabular-nums px-2 py-0.5 rounded-md bg-emerald-500/12 text-emerald-400 font-medium border border-emerald-500/25">
                 {submittedHistory.length} registro(s)
               </span>
             </div>
             <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
-              Clique em <b>Carregar / Editar</b> para abrir qualquer dia anterior no painel, revisar macros ou atualizar anotações.
+              Abra qualquer dia anterior no painel para revisar macros ou atualizar anotações.
             </p>
           </div>
         </div>
 
         {submittedHistory.length === 0 ? (
-          <div className="p-6 rounded-xl border border-dashed border-[var(--border)] bg-[var(--background)] text-center text-xs text-[var(--muted-foreground)]">
+          <div className="surface-inset p-6 rounded-xl border-dashed text-center text-xs text-[var(--muted-foreground)]">
             Nenhum check-in salvo ainda. Preencha o formulário acima e clique em{" "}
-            <b className="text-emerald-400">Salvar Check-in no Supabase</b> para iniciar seu histórico na nuvem!
+            <b className="text-emerald-400">Salvar Check-in</b> para iniciar seu histórico.
           </div>
         ) : (
           <div className="space-y-3">
@@ -301,32 +301,32 @@ export default function CheckinHistorySection({
               return (
                 <div
                   key={item.log_date}
-                  className={`p-4 rounded-xl border bg-[var(--background)] space-y-2.5 transition ${
-                    isSelectedDate ? "border-emerald-500/60" : "border-[var(--border)]"
+                  className={`surface-inset card-interactive p-4 rounded-xl space-y-2.5 ${
+                    isSelectedDate ? "border-emerald-500/45" : ""
                   }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-bold text-white">
-                        📅 {formatFullDateBR(item.log_date)}
+                    <div className="flex flex-wrap items-center gap-2 font-mono tabular-nums">
+                      <span className="text-sm font-semibold text-white">
+                        {formatFullDateBR(item.log_date)}
                       </span>
                       {item.weight_kg !== null ? (
-                        <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                          ⚖️ {Number(item.weight_kg).toFixed(1)} kg
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/12 text-emerald-300 border border-emerald-500/25">
+                          {Number(item.weight_kg).toFixed(1)} kg
                         </span>
                       ) : null}
                       {item.total_kcal !== null ? (
-                        <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-[var(--card)] text-slate-200 border border-[var(--border)]">
-                          🔥 {Number(item.total_kcal).toFixed(0)} kcal (P:{Number(item.total_protein_g ?? 0).toFixed(0)}g • C:
-                          {Number(item.total_carbs_g ?? 0).toFixed(0)}g • G:{Number(item.total_fat_g ?? 0).toFixed(0)}g)
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-white/[0.04] text-slate-200 border border-white/[0.08]">
+                          {Number(item.total_kcal).toFixed(0)} kcal (P {Number(item.total_protein_g ?? 0).toFixed(0)} · C{" "}
+                          {Number(item.total_carbs_g ?? 0).toFixed(0)} · G {Number(item.total_fat_g ?? 0).toFixed(0)})
                         </span>
                       ) : null}
-                      <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">
-                        💧 {item.water_ml.toLocaleString("pt-BR")} ml
+                      <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-500/12 text-sky-300 border border-sky-500/25">
+                        {item.water_ml.toLocaleString("pt-BR")} ml
                       </span>
                       {item.balance_score !== null ? (
-                        <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-400">
-                          Score {item.balance_score}/100
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/10 text-emerald-400">
+                          {item.balance_score}/100
                         </span>
                       ) : null}
                     </div>
@@ -335,43 +335,44 @@ export default function CheckinHistorySection({
                       <button
                         type="button"
                         onClick={() => onSelectActiveDate(item.log_date)}
-                        className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--card)] border border-[var(--border)] text-slate-200 hover:border-emerald-500 transition cursor-pointer"
+                        className="btn-press h-7 px-2.5 rounded-lg text-xs font-medium bg-white/[0.04] border border-white/[0.08] text-slate-200 hover:border-emerald-500/50 cursor-pointer"
                       >
-                        ✏️ Carregar / Editar
+                        Editar
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleCopy(report, item.log_date)}
-                        className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--card)] border border-[var(--border)] text-slate-200 hover:border-emerald-500 transition cursor-pointer"
+                        className="btn-press h-7 px-2.5 rounded-lg text-xs font-medium bg-white/[0.04] border border-white/[0.08] text-slate-200 hover:border-emerald-500/50 cursor-pointer"
                       >
-                        {copiedId === item.log_date ? "✅ Copiado" : "📋 Copiar"}
+                        {copiedId === item.log_date ? "Copiado ✓" : "Copiar"}
                       </button>
                       <button
                         type="button"
                         onClick={() => void onDeleteCheckin(item.log_date)}
-                        className="px-2.5 py-1 rounded-lg text-xs font-medium bg-rose-500/10 border border-rose-500/20 text-rose-300 hover:bg-rose-500/20 transition cursor-pointer"
+                        aria-label="Excluir check-in"
+                        className="btn-press h-7 px-2 rounded-lg text-xs font-medium bg-rose-500/10 border border-rose-500/20 text-rose-300 hover:bg-rose-500/20 cursor-pointer"
                       >
-                        🗑️
+                        ✕
                       </button>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-3 text-[11px] text-[var(--muted-foreground)]">
-                    <span>
-                      🍽️ Cardápio:{" "}
+                    <span className="font-mono">
+                      Cardápio:{" "}
                       <b className="text-slate-300">
                         {["1", "2", "3", "4", "5"]
                           .map((k) => `R${k}:${item.selected_options?.[k as keyof SelectedMeals] ?? "A"}`)
-                          .join(" • ")}
+                          .join(" · ")}
                       </b>
                     </span>
-                    {item.hunger_label ? <span>😋 Fome: {item.hunger_label}</span> : null}
-                    {item.training_energy_label ? <span>🏋️ Treino: {item.training_energy_label}</span> : null}
-                    {item.sleep_digestion ? <span>😴 {item.sleep_digestion}</span> : null}
+                    {item.hunger_label ? <span>Fome: {item.hunger_label}</span> : null}
+                    {item.training_energy_label ? <span>Treino: {item.training_energy_label}</span> : null}
+                    {item.sleep_digestion ? <span>{item.sleep_digestion}</span> : null}
                   </div>
 
                   {item.notes ? (
-                    <div className="text-xs text-slate-200 bg-[var(--card)] border border-[var(--border)] rounded-lg px-3 py-2">
+                    <div className="text-xs text-slate-200 bg-[#090c11] border border-white/[0.06] rounded-lg px-3 py-2">
                       “{item.notes}”
                     </div>
                   ) : null}

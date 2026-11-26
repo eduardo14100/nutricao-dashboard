@@ -1,18 +1,303 @@
 @import "tailwindcss";
 
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 :root {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --card: #1e293b;
-  --border: #334155;
-  --muted-foreground: #94a3b8;
+  /* Obsidian Precision Palette */
+  --background: #07090d;
+  --foreground: #f3f6fa;
+  --card: #0d1117;
+  --surface-inset: #11161f;
+  --surface-elevated: #161d28;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --muted-foreground: #8490a3;
   --primary: #10b981;
-  --primary-foreground: #052e16;
-  --secondary: #334155;
-  --secondary-foreground: #f1f5f9;
+  --primary-foreground: #032014;
+  --secondary: #171f2b;
+  --secondary-foreground: #e5ebf3;
+
+  /* Emil Kowalski Motion Tokens */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-press: 140ms;
+  --duration-ui: 200ms;
+  --duration-modal: 240ms;
+}
+
+html {
+  color-scheme: dark;
+  background-color: var(--background);
 }
 
 body {
   background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse 75% 36% at 50% -10%, rgba(16, 185, 129, 0.085), transparent 72%),
+    radial-gradient(ellipse 50% 28% at 85% 0%, rgba(56, 189, 248, 0.045), transparent 65%);
+  background-repeat: no-repeat;
   color: var(--foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Optical typography helpers */
+.heading-display {
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+
+.heading-section {
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Layered obsidian surfaces with hairline top-edge specular light */
+.surface-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.022) 0%, rgba(255, 255, 255, 0) 100%), var(--card);
+  border: 1px solid var(--border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 12px 32px -16px rgba(0, 0, 0, 0.72);
+}
+
+.surface-inset {
+  background-color: var(--surface-inset);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.surface-modal {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%), #0e131b;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 24px 64px -16px rgba(0, 0, 0, 0.85);
+}
+
+/* Tactile pressable feedback — never transition: all */
+.btn-press {
+  transition:
+    transform var(--duration-press) var(--ease-out),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
+}
+
+.btn-press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.card-interactive {
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-interactive:hover {
+    border-color: var(--border-strong);
+  }
+  .kpi-tile:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    background-color: rgba(255, 255, 255, 0.032);
+  }
+}
+
+.kpi-tile {
+  background-color: var(--surface-inset);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+/* GPU-composited progress bar fill */
+.progress-fill {
+  transform-origin: left center;
+  transition: transform 280ms var(--ease-out), background-color 200ms ease;
+  will-change: transform;
+}
+
+/* Precision range slider */
+input[type="range"].precision-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+input[type="range"].precision-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #34d399;
+  border: 2px solid #07090d;
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.4), 0 2px 6px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 140ms var(--ease-out), background-color 140ms ease;
+}
+
+input[type="range"].precision-slider::-webkit-slider-thumb:active {
+  transform: scale(0.9);
+  background: #6ee7b7;
+}
+
+input[type="range"].precision-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #34d399;
+  border: 2px solid #07090d;
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.4), 0 2px 6px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 140ms var(--ease-out), background-color 140ms ease;
+}
+
+/* Restrained section entrance choreography (non-uniform delays via --enter-delay) */
+@keyframes sectionReveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-enter {
+  animation: sectionReveal 320ms var(--ease-out) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* Modal entrances (never scale(0); subtle blur masks frame step) */
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalPanelIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+.modal-backdrop-enter {
+  animation: backdropIn 180ms var(--ease-out) both;
+}
+
+.modal-panel-enter {
+  transform-origin: center center;
+  animation: modalPanelIn var(--duration-modal) var(--ease-out) both;
+}
+
+/* Subtle content swap transition (meal option switch) */
+@keyframes contentSwap {
+  from {
+    opacity: 0.35;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content-swap {
+  animation: contentSwap 180ms var(--ease-out) both;
+}
+
+/* Tactile PIN dot pop & invalid PIN shake */
+@keyframes pinDotIn {
+  from {
+    opacity: 0.4;
+    transform: scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pin-dot-filled {
+  animation: pinDotIn 150ms var(--ease-out) both;
+}
+
+@keyframes pinShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  45% {
+    transform: translateX(5px);
+  }
+  70% {
+    transform: translateX(-3px);
+  }
+}
+
+.pin-shake {
+  animation: pinShake 280ms var(--ease-out);
+}
+
+/* Form controls refinement */
+.input-field {
+  background-color: #090c11;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--foreground);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: rgba(16, 185, 129, 0.65);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
+}
+
+/* Accessible reduced motion — preserve opacity comprehension, drop movement */
+@media (prefers-reduced-motion: reduce) {
+  .section-enter,
+  .modal-panel-enter,
+  .content-swap,
+  .pin-dot-filled,
+  .pin-shake {
+    animation-name: backdropIn;
+    animation-duration: 160ms;
+    animation-delay: 0ms !important;
+  }
+
+  .btn-press:active:not(:disabled),
+  .card-interactive:hover {
+    transform: none;
+  }
+
+  .progress-fill {
+    transition: opacity 150ms ease;
+  }
 }

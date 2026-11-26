@@ -235,30 +235,29 @@ export default function TacoSwapCalculator() {
     (toResult.partial ? " (parecidos)" : "");
 
   return (
-    <section className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border)] pb-3">
+    <section className="surface-card rounded-2xl p-5 sm:p-6 space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/[0.06] pb-4">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold text-[var(--foreground)]">
-              Calculadora de Alimentos &amp; Substituições (Tabela TACO Oficial)
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h2 className="heading-section text-base sm:text-lg font-semibold text-white">
+              Calculadora de Substituições — Tabela TACO
             </h2>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">
-              {ALL_FOODS.length} Alimentos Oficiais • Busca Inteligente
+            <span className="text-[11px] font-mono tabular-nums px-2 py-0.5 rounded-md bg-emerald-500/12 text-emerald-400 font-medium border border-emerald-500/25">
+              {ALL_FOODS.length} alimentos • Busca aproximada
             </span>
           </div>
-          <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
-            Pesquise em qualquer ordem, sem acento ou com pequenos erros de digitação para encontrar o{" "}
-            <b>ajuste ideal</b> de gramas e macros mantendo seu déficit exato.
+          <p className="text-xs text-[var(--muted-foreground)] mt-1">
+            Pesquise em qualquer ordem, sem acento ou com pequenos erros para encontrar a porção equivalente nas mesmas calorias.
           </p>
         </div>
-        <div className="text-[11px] text-[var(--muted-foreground)] hidden sm:block">
-          Tabela TACO 4ª Edição • UNICAMP
+        <div className="text-[11px] font-mono text-[var(--muted-foreground)] hidden sm:block">
+          TACO 4ª Ed. • UNICAMP
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <div className="text-xs font-semibold text-slate-300">
-          ⚡ Alimentos Frequentes da sua Dieta (Clique para carregar na hora):
+      <div className="space-y-2">
+        <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+          Alimentos frequentes
         </div>
         <div className="flex flex-wrap gap-1.5">
           {QUICK_PRESETS.map((p) => (
@@ -266,7 +265,7 @@ export default function TacoSwapCalculator() {
               key={p.foodId}
               type="button"
               onClick={() => handlePreset(p.foodId, p.grams)}
-              className="px-2.5 py-1 text-xs rounded-lg border border-[var(--border)] bg-[var(--background)] hover:border-emerald-500 hover:text-emerald-400 transition cursor-pointer"
+              className="btn-press px-2.5 py-1.5 text-xs rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-200 hover:border-emerald-500/50 hover:text-emerald-300 cursor-pointer"
             >
               {p.label}
             </button>
@@ -276,20 +275,20 @@ export default function TacoSwapCalculator() {
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
         <div className="md:col-span-5 space-y-1.5">
-          <label className="block text-xs font-semibold text-[var(--foreground)]">
-            1. Alimento Original na Dieta
+          <label className="block text-xs font-medium text-slate-200">
+            1. Alimento original na dieta
           </label>
           <input
             type="text"
             value={fromSearch}
             onChange={(e) => handleFromSearchChange(e.target.value)}
-            placeholder="🔍 Digite para pesquisar (ex: arroz cozido, frango, ovos...)"
-            className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--foreground)] focus:outline-none focus:border-emerald-500"
+            placeholder="Digite para pesquisar (ex: arroz cozido, frango, ovos...)"
+            className="input-field w-full h-9 rounded-lg px-3 text-xs"
           />
           <select
             value={effectiveFromId}
             onChange={(e) => handleFromSelect(Number(e.target.value))}
-            className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-2.5 py-2 text-xs text-[var(--foreground)] focus:outline-none focus:border-emerald-500"
+            className="input-field w-full h-9 rounded-lg px-2.5 text-xs"
           >
             {fromOptions.length === 0 ? (
               <option value="">Nenhum alimento parecido encontrado</option>
@@ -304,38 +303,38 @@ export default function TacoSwapCalculator() {
         </div>
 
         <div className="md:col-span-2 space-y-1.5">
-          <label className="block text-xs font-semibold text-[var(--foreground)]">2. Gramas (g)</label>
+          <label className="block text-xs font-medium text-slate-200">2. Gramas (g)</label>
           <input
             type="number"
             step={1}
             min={1}
             value={grams}
             onChange={(e) => setGrams(Math.max(0, Number(e.target.value) || 0))}
-            className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs font-bold text-emerald-400 focus:outline-none focus:border-emerald-500 text-center"
+            className="input-field w-full h-9 rounded-lg px-3 text-xs font-mono font-semibold tabular-nums text-emerald-400 text-center"
           />
           <div className="text-[10px] text-center text-[var(--muted-foreground)]">
-            Peso pronto / da dieta
+            Peso pronto / dieta
           </div>
         </div>
 
         <div className="md:col-span-5 space-y-1.5">
           <div className="flex items-center justify-between gap-2">
-            <label className="block text-xs font-semibold text-[var(--foreground)]">
-              3. Substituir Por
+            <label className="block text-xs font-medium text-slate-200">
+              3. Substituir por
             </label>
-            <span className="text-[10px] text-emerald-400 font-medium">{toBadgeText}</span>
+            <span className="text-[10px] font-mono tabular-nums text-emerald-400 font-medium">{toBadgeText}</span>
           </div>
           <input
             type="text"
             value={toSearch}
             onChange={(e) => handleToSearchChange(e.target.value)}
-            placeholder="🔍 Digite para pesquisar (ex: batata doce, atum, wrap...)"
-            className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--foreground)] focus:outline-none focus:border-emerald-500"
+            placeholder="Digite para pesquisar (ex: batata doce, atum, wrap...)"
+            className="input-field w-full h-9 rounded-lg px-3 text-xs"
           />
           <select
             value={effectiveToId}
             onChange={(e) => setToId(Number(e.target.value))}
-            className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-2.5 py-2 text-xs text-[var(--foreground)] focus:outline-none focus:border-emerald-500"
+            className="input-field w-full h-9 rounded-lg px-2.5 text-xs"
           >
             {toOptions.length === 0 ? (
               <option value="">Nenhum alimento parecido encontrado</option>
@@ -350,8 +349,10 @@ export default function TacoSwapCalculator() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 text-xs pt-1">
-        <span className="text-[11px] text-[var(--muted-foreground)] mr-1">Filtrar Categoria:</span>
+      <div className="flex flex-wrap items-center gap-1.5 text-xs pt-0.5">
+        <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)] mr-1">
+          Categoria
+        </span>
         {SWAP_CATEGORIES.map((c) => {
           const active = category === c.key;
           return (
@@ -359,10 +360,10 @@ export default function TacoSwapCalculator() {
               key={c.key}
               type="button"
               onClick={() => setCategory(c.key)}
-              className={`px-2.5 py-0.5 rounded-full text-xs border transition cursor-pointer ${
+              className={`btn-press px-2.5 py-1 rounded-full text-xs border cursor-pointer ${
                 active
-                  ? "font-semibold border-emerald-500 bg-emerald-500/20 text-emerald-400"
-                  : "font-medium border-[var(--border)] bg-[var(--background)] text-[var(--muted-foreground)] hover:text-white"
+                  ? "font-semibold border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
+                  : "font-medium border-white/[0.08] bg-white/[0.025] text-[var(--muted-foreground)] hover:text-white hover:border-white/[0.14]"
               }`}
             >
               {c.label}
@@ -371,30 +372,33 @@ export default function TacoSwapCalculator() {
         })}
       </div>
 
-      <div className="p-4 rounded-xl border border-emerald-500/40 bg-[var(--background)] space-y-3">
+      <div className="surface-inset rounded-xl p-4 sm:p-5 border border-emerald-500/25 space-y-4">
         {validCalc && origMacros && eqMacros ? (
           <>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border)] pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/[0.06] pb-4">
               <div>
-                <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
-                  🎯 Ajuste Ideal Calculado (Mesmas Calorias)
+                <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-400">
+                  Equivalência Calórica Exata
                 </div>
-                <div className="text-base sm:text-lg font-bold text-white mt-0.5">
-                  {grams}g de {fFrom.name}{" "}
-                  <span className="text-slate-400 font-normal">equivale a</span>{" "}
-                  <span className="text-emerald-400 underline decoration-emerald-500/50">
-                    {Math.round(eqGrams)} g de {fTo.name}
+                <div className="text-base sm:text-lg font-semibold text-white mt-1 leading-snug">
+                  <span className="font-mono tabular-nums">{grams}g</span> de {fFrom.name}{" "}
+                  <span className="text-[var(--muted-foreground)] font-normal">equivale a</span>{" "}
+                  <span className="text-emerald-400">
+                    <span className="font-mono tabular-nums">{Math.round(eqGrams)} g</span> de {fTo.name}
                   </span>
                 </div>
-                <div className="text-xs text-[var(--muted-foreground)] mt-0.5">
-                  Calorias idênticas mantidas na dieta:{" "}
-                  <b className="text-white">{origKcal.toFixed(0)} kcal</b> (zero impacto no seu déficit)
+                <div className="text-xs text-[var(--muted-foreground)] mt-1 tabular-nums">
+                  Calorias mantidas na dieta:{" "}
+                  <b className="font-mono text-white">{origKcal.toFixed(0)} kcal</b> (zero impacto no déficit)
                 </div>
               </div>
-              <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl px-3.5 py-2 text-center shrink-0">
-                <div className="text-[10px] text-[var(--muted-foreground)] uppercase">Peso do Substituto</div>
-                <div className="text-xl font-extrabold text-emerald-400">
-                  {Math.round(eqGrams)} <span className="text-xs text-white">gramas</span>
+              <div className="rounded-xl bg-[#090c11] border border-white/[0.08] px-4 py-2.5 text-center shrink-0">
+                <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+                  Porção ideal
+                </div>
+                <div className="text-2xl font-semibold font-mono tabular-nums text-emerald-400 mt-0.5">
+                  {Math.round(eqGrams)}
+                  <span className="text-xs font-sans font-normal text-slate-300 ml-1">g</span>
                 </div>
               </div>
             </div>
@@ -402,47 +406,47 @@ export default function TacoSwapCalculator() {
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="text-[11px] text-[var(--muted-foreground)] border-b border-[var(--border)]">
-                    <th className="py-1.5 font-medium">Nutriente</th>
-                    <th className="py-1.5 font-medium text-slate-300">
+                  <tr className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-foreground)] border-b border-white/[0.07]">
+                    <th className="py-2 font-medium">Nutriente</th>
+                    <th className="py-2 font-medium text-slate-300">
                       Original ({grams}g {fFrom.name.split(",")[0]})
                     </th>
-                    <th className="py-1.5 font-medium text-emerald-400">
+                    <th className="py-2 font-medium text-emerald-400">
                       Substituto ({Math.round(eqGrams)}g {fTo.name.split(",")[0]})
                     </th>
-                    <th className="py-1.5 font-medium">Variação no Dia</th>
+                    <th className="py-2 font-medium">Variação</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--border)]">
+                <tbody className="divide-y divide-white/[0.05] font-mono tabular-nums">
                   <tr>
-                    <td className="py-1.5 font-medium">🔥 Calorias</td>
-                    <td className="py-1.5 text-slate-300">{origKcal.toFixed(0)} kcal</td>
-                    <td className="py-1.5 text-emerald-400 font-semibold">{origKcal.toFixed(0)} kcal</td>
-                    <td className="py-1.5 text-slate-400 font-semibold">0 kcal (Perfeito)</td>
+                    <td className="py-2 font-sans font-medium text-slate-200">Calorias</td>
+                    <td className="py-2 text-slate-300">{origKcal.toFixed(0)} kcal</td>
+                    <td className="py-2 text-emerald-400 font-semibold">{origKcal.toFixed(0)} kcal</td>
+                    <td className="py-2 font-sans text-[var(--muted-foreground)]">0 kcal (exato)</td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 font-medium">🥩 Proteínas</td>
-                    <td className="py-1.5 text-slate-300">{origMacros.p.toFixed(1)} g</td>
-                    <td className="py-1.5 text-emerald-400 font-semibold">{eqMacros.p.toFixed(1)} g</td>
-                    <td className="py-1.5">{formatDiff(eqMacros.p - origMacros.p)}</td>
+                    <td className="py-2 font-sans font-medium text-slate-200">Proteínas</td>
+                    <td className="py-2 text-slate-300">{origMacros.p.toFixed(1)} g</td>
+                    <td className="py-2 text-emerald-400 font-semibold">{eqMacros.p.toFixed(1)} g</td>
+                    <td className="py-2">{formatDiff(eqMacros.p - origMacros.p)}</td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 font-medium">🌾 Carboidratos</td>
-                    <td className="py-1.5 text-slate-300">{origMacros.c.toFixed(1)} g</td>
-                    <td className="py-1.5 text-emerald-400 font-semibold">{eqMacros.c.toFixed(1)} g</td>
-                    <td className="py-1.5">{formatDiff(eqMacros.c - origMacros.c)}</td>
+                    <td className="py-2 font-sans font-medium text-slate-200">Carboidratos</td>
+                    <td className="py-2 text-slate-300">{origMacros.c.toFixed(1)} g</td>
+                    <td className="py-2 text-emerald-400 font-semibold">{eqMacros.c.toFixed(1)} g</td>
+                    <td className="py-2">{formatDiff(eqMacros.c - origMacros.c)}</td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 font-medium">🥑 Gorduras</td>
-                    <td className="py-1.5 text-slate-300">{origMacros.f.toFixed(1)} g</td>
-                    <td className="py-1.5 text-emerald-400 font-semibold">{eqMacros.f.toFixed(1)} g</td>
-                    <td className="py-1.5">{formatDiff(eqMacros.f - origMacros.f)}</td>
+                    <td className="py-2 font-sans font-medium text-slate-200">Gorduras</td>
+                    <td className="py-2 text-slate-300">{origMacros.f.toFixed(1)} g</td>
+                    <td className="py-2 text-emerald-400 font-semibold">{eqMacros.f.toFixed(1)} g</td>
+                    <td className="py-2">{formatDiff(eqMacros.f - origMacros.f)}</td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 font-medium">🥗 Fibras</td>
-                    <td className="py-1.5 text-slate-300">{origMacros.fib.toFixed(1)} g</td>
-                    <td className="py-1.5 text-emerald-400 font-semibold">{eqMacros.fib.toFixed(1)} g</td>
-                    <td className="py-1.5">{formatDiff(eqMacros.fib - origMacros.fib)}</td>
+                    <td className="py-2 font-sans font-medium text-slate-200">Fibras</td>
+                    <td className="py-2 text-slate-300">{origMacros.fib.toFixed(1)} g</td>
+                    <td className="py-2 text-emerald-400 font-semibold">{eqMacros.fib.toFixed(1)} g</td>
+                    <td className="py-2">{formatDiff(eqMacros.fib - origMacros.fib)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -456,11 +460,10 @@ export default function TacoSwapCalculator() {
       </div>
 
       {validCalc && smartStaples.length > 0 ? (
-        <div className="space-y-2 border-t border-[var(--border)] pt-3">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-            <span>
-              💡 Sugestões Rápidas de Ajuste Ideal para {grams}g de {fFrom.name.split(",")[0]} (
-              {origKcal.toFixed(0)} kcal):
+        <div className="space-y-2.5 border-t border-white/[0.06] pt-4">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium text-slate-200 tabular-nums">
+              Sugestões rápidas para {grams}g de {fFrom.name.split(",")[0]} ({origKcal.toFixed(0)} kcal)
             </span>
             <span className="text-[10px] text-[var(--muted-foreground)]">Clique para aplicar</span>
           </div>
@@ -474,16 +477,16 @@ export default function TacoSwapCalculator() {
                   key={st.id}
                   type="button"
                   onClick={() => handleSmartSubstitute(st.id)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition text-left cursor-pointer ${
+                  className={`btn-press px-3 py-2 rounded-lg text-xs font-medium border text-left cursor-pointer ${
                     isSelected
-                      ? "border-emerald-500 bg-emerald-500/25 text-emerald-300 font-bold"
-                      : "border-[var(--border)] bg-[var(--card)] hover:border-emerald-500/60 hover:text-white"
+                      ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-200 font-semibold"
+                      : "border-white/[0.08] bg-white/[0.025] text-slate-200 hover:border-emerald-500/40 hover:text-white"
                   }`}
                 >
                   <span>
                     {st.icon} {st.name}:
                   </span>{" "}
-                  <b className="text-emerald-400 font-bold">{itemEqGrams} g</b>
+                  <b className="font-mono tabular-nums text-emerald-400 font-semibold">{itemEqGrams} g</b>
                 </button>
               );
             })}

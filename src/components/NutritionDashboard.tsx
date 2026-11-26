@@ -457,130 +457,164 @@ export default function NutritionDashboard({
   const activeCycle = cycles.find((c) => c.is_active) ?? null;
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6 sm:py-8 space-y-6">
       {/* Header */}
-      <header className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
+      <header
+        className="surface-card rounded-2xl p-5 sm:p-7 section-enter"
+        style={{ "--enter-delay": "0ms" } as React.CSSProperties}
+      >
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => setCycleModalOpen(true)}
-                className="hover:text-emerald-400 transition cursor-pointer text-left"
+                className="btn-press inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] font-mono uppercase tracking-[0.12em] text-emerald-400/90 hover:text-emerald-300 cursor-pointer text-left"
                 title="Gerenciar ciclos e datas do protocolo"
               >
-                {activeCycle ? activeCycle.name : "Protocolo Cutting"} • {protocolDays} Dias (
-                {formatShortDateBR(settings.protocol_start_date)} a{" "}
-                {formatFullDateBR(settings.protocol_end_date)})
+                <span>{activeCycle ? activeCycle.name : "Protocolo Cutting"}</span>
+                <span className="text-white/25">/</span>
+                <span className="tabular-nums text-[var(--muted-foreground)]">
+                  {protocolDays}d ({formatShortDateBR(settings.protocol_start_date)} – {formatFullDateBR(settings.protocol_end_date)})
+                </span>
               </button>
               <span
-                className={`normal-case px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${
                   syncState === "saving"
-                    ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                    ? "bg-amber-500/10 text-amber-300 border-amber-500/25"
                     : syncState === "error"
-                      ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
-                      : "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                      ? "bg-rose-500/10 text-rose-300 border-rose-500/25"
+                      : "bg-white/[0.03] text-slate-300 border-white/[0.08]"
                 }`}
               >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    syncState === "saving"
+                      ? "bg-amber-400"
+                      : syncState === "error"
+                        ? "bg-rose-400"
+                        : "bg-emerald-400"
+                  }`}
+                />
                 {syncState === "saving"
-                  ? "⏳ Salvando no Supabase..."
+                  ? "Salvando..."
                   : syncState === "error"
-                    ? "⚠️ Erro de sincronização"
-                    : "☁️ Sincronizado com Supabase"}
+                    ? "Erro ao sincronizar"
+                    : "Supabase sincronizado"}
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-[var(--foreground)] mt-1">
+
+            <h1 className="heading-display text-2xl sm:text-[30px] font-semibold text-white leading-tight">
               Painel de Acompanhamento Nutricional
             </h1>
-            <p className="text-sm text-[var(--muted-foreground)] mt-1">
-              Perfil: {settings.sex === 0 ? "Mulher" : "Homem"}, {settings.age_years ?? 33} anos,{" "}
-              {((settings.height_cm ?? 181) / 100).toFixed(2).replace(".", ",")} m, início{" "}
-              {Number(settings.start_weight_kg).toFixed(1).replace(".", ",")} kg • Musculação 4x/sem • 5 Refeições/dia
+
+            <p className="text-xs sm:text-sm text-[var(--muted-foreground)] tabular-nums">
+              {settings.sex === 0 ? "Mulher" : "Homem"} • {settings.age_years ?? 33} anos •{" "}
+              {((settings.height_cm ?? 181) / 100).toFixed(2).replace(".", ",")} m • início{" "}
+              <span className="text-slate-200 font-medium">
+                {Number(settings.start_weight_kg).toFixed(1).replace(".", ",")} kg
+              </span>{" "}
+              • Musculação 4x/sem
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2 items-center">
-            <label className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--background)] border border-[var(--border)] text-slate-200">
-              <span>📅 Dia:</span>
+            <label className="input-field flex items-center gap-2 px-3 h-9 rounded-xl text-xs font-medium text-slate-300">
+              <span className="text-[var(--muted-foreground)]">Dia</span>
               <input
                 type="date"
                 value={activeDate}
                 onChange={(e) => {
                   if (e.target.value) handleSelectActiveDate(e.target.value);
                 }}
-                className="bg-transparent text-emerald-400 font-semibold focus:outline-none"
+                className="bg-transparent text-emerald-400 font-mono text-xs font-medium tabular-nums focus:outline-none cursor-pointer"
               />
             </label>
             <button
               type="button"
               onClick={() => setCycleModalOpen(true)}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/25 transition cursor-pointer"
+              className="btn-press h-9 px-3 rounded-xl text-xs font-medium bg-emerald-500/12 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 hover:border-emerald-400/50 cursor-pointer"
               title="Iniciar novo ciclo ou editar datas e metas do protocolo"
             >
-              🗓️ Ciclos
+              Ciclos
             </button>
             <a
               href="/api/plano-pdf"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-[var(--border)] hover:bg-slate-700 transition"
+              className="btn-press inline-flex items-center h-9 px-3 rounded-xl text-xs font-medium bg-white/[0.03] text-slate-200 border border-white/[0.08] hover:bg-white/[0.07] hover:border-white/[0.14]"
               title="Abrir Plano Nutricional em PDF"
             >
-              📄 Plano PDF
+              Plano PDF
             </a>
             <button
               type="button"
-              onClick={() => void handleLock()}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-[var(--border)] hover:bg-slate-700 transition cursor-pointer"
-              title="Bloquear tela com PIN"
+              onClick={() => setPinModalOpen(true)}
+              className="btn-press h-9 px-3 rounded-xl text-xs font-medium bg-white/[0.03] text-slate-200 border border-white/[0.08] hover:bg-white/[0.07] hover:border-white/[0.14] cursor-pointer"
+              title="Alterar PIN"
             >
-              🔒 Bloquear
+              PIN
             </button>
             <button
               type="button"
-              onClick={() => setPinModalOpen(true)}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-[var(--border)] hover:bg-slate-700 transition cursor-pointer"
-              title="Alterar PIN"
+              onClick={() => void handleLock()}
+              className="btn-press h-9 px-3 rounded-xl text-xs font-medium bg-white/[0.03] text-slate-400 border border-white/[0.08] hover:text-white hover:bg-white/[0.07] cursor-pointer"
+              title="Bloquear tela com PIN"
             >
-              ⚙️ Alterar PIN
+              Bloquear
             </button>
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5">
-          <div className="p-3.5 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-            <div className="text-xs text-[var(--muted-foreground)]">TMB (Basal)</div>
-            <div className="text-lg font-bold mt-0.5">
-              {settings.tmb_kcal.toLocaleString("pt-BR")} kcal
+        {/* Telemetry KPI Strip */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-6 pt-5 border-t border-white/[0.06]">
+          <div className="kpi-tile p-3.5 rounded-xl">
+            <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+              TMB Basal
             </div>
-            <div className="text-xs text-[var(--muted-foreground)]">Mifflin-St Jeor (~1.800 kcal)</div>
-          </div>
-          <div className="p-3.5 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-            <div className="text-xs text-[var(--muted-foreground)]">GET (Manutenção)</div>
-            <div className="text-lg font-bold mt-0.5">
-              {settings.get_kcal.toLocaleString("pt-BR")} kcal
+            <div className="text-xl font-semibold font-mono tabular-nums text-white mt-1.5">
+              {settings.tmb_kcal.toLocaleString("pt-BR")}
+              <span className="text-xs font-sans font-normal text-[var(--muted-foreground)] ml-1">kcal</span>
             </div>
-            <div className="text-xs text-[var(--muted-foreground)]">Fator 1,375 (Treino 4x/sem)</div>
+            <div className="text-[11px] text-[var(--muted-foreground)] mt-1">Mifflin-St Jeor</div>
           </div>
-          <div className="p-3.5 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-            <div className="text-xs text-[var(--muted-foreground)]">Meta Diária (Cutting)</div>
-            <div className="text-lg font-bold text-emerald-500 mt-0.5">
-              {settings.calorie_goal.toLocaleString("pt-BR")} kcal
+
+          <div className="kpi-tile p-3.5 rounded-xl">
+            <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+              GET Manutenção
             </div>
-            <div className="text-xs text-[var(--muted-foreground)]">Déficit de ~{simDeficit} kcal/dia</div>
+            <div className="text-xl font-semibold font-mono tabular-nums text-white mt-1.5">
+              {settings.get_kcal.toLocaleString("pt-BR")}
+              <span className="text-xs font-sans font-normal text-[var(--muted-foreground)] ml-1">kcal</span>
+            </div>
+            <div className="text-[11px] text-[var(--muted-foreground)] mt-1">Fator 1,375 (4x/sem)</div>
           </div>
-          <div className="p-3.5 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-            <div className="text-xs text-[var(--muted-foreground)]">
+
+          <div className="kpi-tile p-3.5 rounded-xl">
+            <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+              Meta Cutting
+            </div>
+            <div className="text-xl font-semibold font-mono tabular-nums text-emerald-400 mt-1.5">
+              {settings.calorie_goal.toLocaleString("pt-BR")}
+              <span className="text-xs font-sans font-normal text-emerald-400/70 ml-1">kcal</span>
+            </div>
+            <div className="text-[11px] text-[var(--muted-foreground)] tabular-nums mt-1">
+              Déficit de ~{simDeficit} kcal/dia
+            </div>
+          </div>
+
+          <div className="kpi-tile p-3.5 rounded-xl">
+            <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
               {latestReal
-                ? `Realizado (${latestReal.label}) vs Proj.`
-                : `Meta de Peso (${formatShortDateBR(settings.protocol_end_date)})`}
+                ? `Realizado (${latestReal.label})`
+                : `Meta (${formatShortDateBR(settings.protocol_end_date)})`}
             </div>
-            <div className="text-lg font-bold mt-0.5 flex items-baseline gap-1.5">
+            <div className="text-xl font-semibold font-mono tabular-nums text-white mt-1.5 flex items-baseline gap-1.5">
               <span>
                 {latestReal
-                  ? `${latestReal.realizedKg.toFixed(1)} kg`
-                  : `${pvrSummary.projectedFinalKg.toFixed(1).replace(".", ",")} kg`}
+                  ? `${latestReal.realizedKg.toFixed(1)}`
+                  : `${pvrSummary.projectedFinalKg.toFixed(1).replace(".", ",")}`}
+                <span className="text-xs font-sans font-normal text-[var(--muted-foreground)] ml-0.5">kg</span>
               </span>
               {latestReal ? (
                 <span
@@ -588,47 +622,59 @@ export default function NutritionDashboard({
                     latestReal.deltaKg <= 0 ? "text-emerald-400" : "text-amber-400"
                   }`}
                 >
-                  ({latestReal.deltaKg <= 0 ? "" : "+"}
-                  {latestReal.deltaKg.toFixed(1)})
+                  {latestReal.deltaKg <= 0 ? "" : "+"}
+                  {latestReal.deltaKg.toFixed(1)}
                 </span>
               ) : null}
             </div>
-            <div className="text-xs text-[var(--muted-foreground)]">
-              Proj. hoje: {pvrSummary.projectedTodayKg.toFixed(1)} kg • Alvo:{" "}
+            <div className="text-[11px] text-[var(--muted-foreground)] tabular-nums mt-1">
+              Proj. hoje {pvrSummary.projectedTodayKg.toFixed(1)} • Alvo{" "}
               {Number(settings.target_weight_min_kg).toFixed(0)}–{Number(settings.target_weight_max_kg).toFixed(0)} kg
             </div>
           </div>
-          <div className="p-3.5 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-            <div className="text-xs text-[var(--muted-foreground)]">Score de Balanço</div>
-            <div className="text-lg font-bold text-emerald-500 mt-0.5">{balanceScore}/100</div>
-            <div className="text-xs text-[var(--muted-foreground)]">
-              {balanceScore >= 90 ? "Excelente (food-nutrition)" : "Bom Equilíbrio"}
+
+          <div className="kpi-tile p-3.5 rounded-xl col-span-2 md:col-span-1">
+            <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+              Score Balanço
+            </div>
+            <div className="text-xl font-semibold font-mono tabular-nums text-emerald-400 mt-1.5">
+              {balanceScore}
+              <span className="text-xs font-sans font-normal text-[var(--muted-foreground)]">/100</span>
+            </div>
+            <div className="text-[11px] text-[var(--muted-foreground)] mt-1">
+              {balanceScore >= 90 ? "Aderência excelente" : "Bom equilíbrio"}
             </div>
           </div>
         </div>
       </header>
 
-      {/* Metas Diárias & Progresso (Full-width, compact & balanced) */}
-      <section className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* Metas Diárias & Progresso */}
+      <section
+        className="surface-card rounded-2xl p-5 sm:p-6 space-y-5 section-enter"
+        style={{ "--enter-delay": "45ms" } as React.CSSProperties}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-[var(--foreground)]">
-              Metas Diárias &amp; Progresso ({formatFullDateBR(activeDate)})
+            <h2 className="heading-section text-base sm:text-lg font-semibold text-white">
+              Metas Diárias &amp; Progresso
+              <span className="ml-2 text-xs font-mono font-normal text-[var(--muted-foreground)] tabular-nums">
+                {formatFullDateBR(activeDate)}
+              </span>
             </h2>
-            <p className="text-xs text-[var(--muted-foreground)]">
-              Calculado em tempo real e salvo automaticamente no Supabase
+            <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+              Calculado em tempo real a partir das escolhas do cardápio e salvo na nuvem.
             </p>
           </div>
           <button
             type="button"
             onClick={() => handleResetPlan("A")}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:opacity-90 cursor-pointer"
+            className="btn-press h-8 px-3 text-xs font-medium rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-200 hover:bg-white/[0.07] hover:border-white/[0.14] cursor-pointer"
           >
             Restaurar Plano Base (A)
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
           {gpMetrics.map((m) => {
             const pct = Math.min(100, Math.round((m.actual / m.goal) * 100));
             let barColor = "bg-emerald-500";
@@ -638,36 +684,44 @@ export default function NutritionDashboard({
               const diff = m.goal - m.actual;
               if (Math.abs(diff) <= 60) {
                 statusEl = (
-                  <span className="text-emerald-500 font-medium">
-                    No Alvo ({diff >= 0 ? `-${diff.toFixed(0)}` : `+${Math.abs(diff).toFixed(0)}`} kcal)
+                  <span className="text-emerald-400 font-medium tabular-nums">
+                    No alvo ({diff >= 0 ? `−${diff.toFixed(0)}` : `+${Math.abs(diff).toFixed(0)}`} kcal)
                   </span>
                 );
               } else if (diff < -60) {
                 barColor = "bg-amber-500";
                 statusEl = (
-                  <span className="text-amber-500 font-medium">Acima (+{Math.abs(diff).toFixed(0)} kcal)</span>
+                  <span className="text-amber-400 font-medium tabular-nums">
+                    Acima (+{Math.abs(diff).toFixed(0)} kcal)
+                  </span>
                 );
               } else {
-                statusEl = <span className="text-sky-500 font-medium">Abaixo (-{diff.toFixed(0)} kcal)</span>;
+                statusEl = (
+                  <span className="text-sky-400 font-medium tabular-nums">
+                    Abaixo (−{diff.toFixed(0)} kcal)
+                  </span>
+                );
               }
             } else if (m.kind === "limit") {
               if (m.actual <= m.goal * 0.9) {
                 statusEl = (
-                  <span className="text-emerald-500 font-medium">
-                    Controlado ({(m.goal - m.actual).toFixed(0)} {m.unit} abaixo)
+                  <span className="text-emerald-400 font-medium tabular-nums">
+                    Controlado (−{(m.goal - m.actual).toFixed(0)} {m.unit})
                   </span>
                 );
               } else {
                 barColor = "bg-amber-500";
-                statusEl = <span className="text-amber-500 font-medium">Próximo ao limite</span>;
+                statusEl = <span className="text-amber-400 font-medium">Próximo ao limite</span>;
               }
             } else {
               if (m.actual >= m.goal * 0.92) {
-                statusEl = <span className="text-emerald-500 font-medium">Meta Atingida ({pct}%)</span>;
+                statusEl = (
+                  <span className="text-emerald-400 font-medium tabular-nums">Meta atingida ({pct}%)</span>
+                );
               } else {
                 barColor = "bg-sky-500";
                 statusEl = (
-                  <span className="text-amber-500 font-medium">
+                  <span className="text-amber-400 font-medium tabular-nums">
                     Faltam {(m.goal - m.actual).toFixed(0)} {m.unit}
                   </span>
                 );
@@ -677,51 +731,60 @@ export default function NutritionDashboard({
             return (
               <div key={m.key} className={`space-y-1.5 ${m.key === "kcal" ? "md:col-span-2" : ""}`}>
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="font-medium text-[var(--foreground)]">{m.label}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-[var(--foreground)]">
-                      {m.actual.toFixed(m.unit === "g" ? 1 : 0)} / {m.goal} {m.unit}
+                  <span className="font-medium text-slate-200">{m.label}</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-mono font-semibold tabular-nums text-white">
+                      {m.actual.toFixed(m.unit === "g" ? 1 : 0)}
+                      <span className="text-[var(--muted-foreground)] font-normal">
+                        {" "}/ {m.goal} {m.unit}
+                      </span>
                     </span>
                     {statusEl}
                   </div>
                 </div>
-                <div className="w-full h-2 rounded-full bg-[var(--background)] border border-[var(--border)] overflow-hidden">
-                  <div className={`h-full ${barColor} transition-all duration-300`} style={{ width: `${pct}%` }} />
+                <div className="w-full h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div
+                    className={`w-full h-full rounded-full ${barColor} progress-fill`}
+                    style={{ transform: `scaleX(${Math.max(0, Math.min(1, pct / 100))})` }}
+                  />
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div className="pt-3 border-t border-[var(--border)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="pt-4 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <div className="text-sm font-medium">
-              💧 Hidratação Diária (Meta: {settings.water_goal_ml.toLocaleString("pt-BR")} ml — 35 ml/kg)
+            <div className="text-sm font-medium text-white">
+              Hidratação Diária{" "}
+              <span className="text-xs font-normal text-[var(--muted-foreground)] tabular-nums">
+                (meta {settings.water_goal_ml.toLocaleString("pt-BR")} ml • 35 ml/kg)
+              </span>
             </div>
-            <div className="text-xs text-[var(--muted-foreground)]">
-              Atual em {formatFullDateBR(activeDate)}:{" "}
-              <span className="font-semibold text-[var(--foreground)]">{waterMl.toLocaleString("pt-BR")}</span> ml registrados
+            <div className="text-xs text-[var(--muted-foreground)] mt-0.5 tabular-nums">
+              Registrado em {formatFullDateBR(activeDate)}:{" "}
+              <span className="font-mono font-semibold text-white">{waterMl.toLocaleString("pt-BR")} ml</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => handleAddWater(-250)}
-              className="px-2.5 py-1 text-xs rounded border border-[var(--border)] bg-[var(--background)] hover:opacity-80 cursor-pointer"
+              className="btn-press h-8 px-3 text-xs font-mono font-medium tabular-nums rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 hover:bg-white/[0.07] hover:text-white cursor-pointer"
             >
-              -250 ml
+              −250 ml
             </button>
             <button
               type="button"
               onClick={() => handleAddWater(250)}
-              className="px-2.5 py-1 text-xs rounded border border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:opacity-80 cursor-pointer"
+              className="btn-press h-8 px-3 text-xs font-mono font-medium tabular-nums rounded-lg border border-white/[0.1] bg-white/[0.06] text-white hover:bg-white/[0.11] cursor-pointer"
             >
               +250 ml
             </button>
             <button
               type="button"
               onClick={() => handleAddWater(500)}
-              className="px-2.5 py-1 text-xs rounded bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 cursor-pointer"
+              className="btn-press h-8 px-3.5 text-xs font-mono font-semibold tabular-nums rounded-lg bg-emerald-500 text-[#032014] hover:bg-emerald-400 cursor-pointer"
             >
               +500 ml
             </button>
@@ -729,131 +792,146 @@ export default function NutritionDashboard({
         </div>
       </section>
 
-      {/* Projected vs Realized Chart & Xiaomi Scale (Full-width section below) */}
-      <WeightChartCard
-        weights={weights}
-        scaleMeasurements={scaleMeasurements}
-        settings={settings}
-        simDeficit={simDeficit}
-        onDeficitChange={handleDeficitChange}
-        onSaveWeight={handleSaveWeight}
-        onDeleteWeight={handleDeleteWeight}
-        onResetWeights={handleResetWeights}
-        onSyncScaleMeasurements={handleSyncScaleMeasurements}
-        onDeleteScaleMeasurement={handleDeleteScaleMeasurement}
-        onSaveBodyProfile={handleSaveBodyProfile}
-      />
+      {/* Projected vs Realized Chart & Xiaomi Scale */}
+      <div className="section-enter" style={{ "--enter-delay": "85ms" } as React.CSSProperties}>
+        <WeightChartCard
+          weights={weights}
+          scaleMeasurements={scaleMeasurements}
+          settings={settings}
+          simDeficit={simDeficit}
+          onDeficitChange={handleDeficitChange}
+          onSaveWeight={handleSaveWeight}
+          onDeleteWeight={handleDeleteWeight}
+          onResetWeights={handleResetWeights}
+          onSyncScaleMeasurements={handleSyncScaleMeasurements}
+          onDeleteScaleMeasurement={handleDeleteScaleMeasurement}
+          onSaveBodyProfile={handleSaveBodyProfile}
+        />
+      </div>
 
       {/* 5 Meals Interactive Selector */}
-      <section className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-5">
+      <section
+        className="surface-card rounded-2xl p-5 sm:p-6 space-y-5 section-enter"
+        style={{ "--enter-delay": "120ms" } as React.CSSProperties}
+      >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-[var(--foreground)]">
-              Cardápio Interativo — 5 Refeições Diárias (Dados Oficiais TACO)
+            <h2 className="heading-section text-base sm:text-lg font-semibold text-white">
+              Cardápio Interativo — 5 Refeições Diárias
             </h2>
-            <p className="text-xs text-[var(--muted-foreground)]">
-              Alterne entre as Opções A, B ou C em cada refeição — sua escolha do dia fica salva na nuvem.
+            <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+              Alterne entre as opções A, B ou C com macros oficiais TACO salvos automaticamente.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => handleResetPlan("A")}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--background)] hover:opacity-80 cursor-pointer"
-            >
-              Todo Plano A
-            </button>
-            <button
-              type="button"
-              onClick={() => handleResetPlan("B")}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--background)] hover:opacity-80 cursor-pointer"
-            >
-              Todo Plano B
-            </button>
-            <button
-              type="button"
-              onClick={() => handleResetPlan("C")}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--background)] hover:opacity-80 cursor-pointer"
-            >
-              Todo Plano C
-            </button>
+          <div className="flex flex-wrap gap-1.5">
+            {(["A", "B", "C"] as const).map((planKey) => (
+              <button
+                key={planKey}
+                type="button"
+                onClick={() => handleResetPlan(planKey)}
+                className="btn-press h-8 px-3 text-xs font-medium rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 hover:bg-white/[0.07] hover:text-white cursor-pointer"
+              >
+                Todo Plano {planKey}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {MEALS_DATA.map((meal) => {
             const activeKey = selectedOptions[String(meal.id) as keyof SelectedMeals] ?? "A";
+            const activeIdx = activeKey === "A" ? 0 : activeKey === "B" ? 1 : 2;
             const activeOpt = meal.options[activeKey];
             const mTotal = calcMealMacros(meal, activeKey);
 
             return (
               <div
                 key={meal.id}
-                className="p-4 rounded-xl border border-[var(--border)] bg-[var(--background)] flex flex-col justify-between space-y-3"
+                className="surface-inset card-interactive p-4 rounded-xl flex flex-col justify-between space-y-3.5"
               >
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[var(--secondary)] text-[var(--secondary-foreground)]">
+                    <span className="text-[11px] font-mono font-medium tabular-nums px-2 py-0.5 rounded-md bg-white/[0.05] text-slate-300 border border-white/[0.06]">
                       {meal.time}
                     </span>
-                    <div className="flex gap-1">
+
+                    {/* Native-grade sliding segmented control */}
+                    <div
+                      role="tablist"
+                      aria-label={`Opções de ${meal.title}`}
+                      className="relative grid grid-cols-3 p-0.5 rounded-lg bg-[#090c11] border border-white/[0.08] w-[144px]"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute top-0.5 bottom-0.5 left-0.5 w-[calc((100%-4px)/3)] rounded-md bg-emerald-500 shadow-sm"
+                        style={{
+                          transform: `translateX(${activeIdx * 100}%)`,
+                          transition: "transform 220ms var(--ease-out)",
+                        }}
+                      />
                       {(["A", "B", "C"] as const).map((k) => (
                         <button
                           key={k}
                           type="button"
+                          role="tab"
+                          aria-selected={activeKey === k}
                           onClick={() => handleSelectMealOption(meal.id, k)}
-                          className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer ${
-                            activeKey === k
-                              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                              : "bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--border)] hover:text-white"
+                          className={`relative z-10 py-1 text-[11px] font-semibold transition-colors duration-150 cursor-pointer ${
+                            activeKey === k ? "text-[#032014]" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Opção {k}
+                          {k}
                         </button>
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-[var(--foreground)]">{meal.title}</h3>
-                    <p className="text-xs text-[var(--muted-foreground)]">{activeOpt.label}</p>
+
+                  <div key={`${meal.id}-${activeKey}`} className="space-y-2.5 content-swap">
+                    <div>
+                      <h3 className="text-sm font-semibold text-white tracking-tight">{meal.title}</h3>
+                      <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{activeOpt.label}</p>
+                    </div>
+                    <ul className="divide-y divide-white/[0.06]">
+                      {activeOpt.items.map((it, idx) => {
+                        const f = TACO_FOODS[String(it.food_id)];
+                        const m = calcItemMacros(it.food_id, it.grams);
+                        return (
+                          <li
+                            key={`${it.food_id}-${idx}`}
+                            className="flex items-start justify-between gap-2.5 text-xs py-2"
+                          >
+                            <div className="min-w-0">
+                              <span className="font-medium text-slate-100 block leading-snug">
+                                {f?.name ?? `TACO #${it.food_id}`}
+                              </span>
+                              <span className="text-[11px] text-[var(--muted-foreground)] block mt-0.5">
+                                {it.grams}g • {it.note}
+                              </span>
+                            </div>
+                            <div className="text-right whitespace-nowrap font-mono tabular-nums shrink-0">
+                              <span className="font-semibold text-slate-100 text-[11px]">
+                                {m.kcal.toFixed(0)} kcal
+                              </span>
+                              <span className="block text-[10px] text-[var(--muted-foreground)] mt-0.5">
+                                P {m.p.toFixed(0)} · C {m.c.toFixed(0)} · G {m.f.toFixed(0)}
+                              </span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
-                  <ul className="divide-y divide-[var(--border)]">
-                    {activeOpt.items.map((it, idx) => {
-                      const f = TACO_FOODS[String(it.food_id)];
-                      const m = calcItemMacros(it.food_id, it.grams);
-                      return (
-                        <li
-                          key={`${it.food_id}-${idx}`}
-                          className="flex items-start justify-between gap-2 text-xs py-1.5"
-                        >
-                          <div>
-                            <span className="font-medium text-[var(--foreground)]">
-                              {f?.name ?? `TACO #${it.food_id}`}
-                            </span>
-                            <span className="text-[var(--muted-foreground)] block">
-                              TACO #{it.food_id} • {it.grams}g ({it.note})
-                            </span>
-                          </div>
-                          <div className="text-right whitespace-nowrap text-[var(--muted-foreground)]">
-                            <span className="font-semibold text-[var(--foreground)]">
-                              {m.kcal.toFixed(0)} kcal
-                            </span>
-                            <br />
-                            P:{m.p.toFixed(1)}g C:{m.c.toFixed(1)}g G:{m.f.toFixed(1)}g
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
                 </div>
 
-                <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs">
-                  <span className="font-semibold text-[var(--foreground)]">
-                    Total: {mTotal.kcal.toFixed(0)} kcal
+                <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono tabular-nums">
+                  <span className="font-semibold text-emerald-400">
+                    {mTotal.kcal.toFixed(0)} kcal
                   </span>
-                  <span className="text-[var(--muted-foreground)]">
-                    P: <b>{mTotal.p.toFixed(1)}g</b> • C: <b>{mTotal.c.toFixed(1)}g</b> • G:{" "}
-                    <b>{mTotal.f.toFixed(1)}g</b> • Fib: <b>{mTotal.fib.toFixed(1)}g</b>
+                  <span className="text-[11px] text-[var(--muted-foreground)]">
+                    P <b className="text-slate-200">{mTotal.p.toFixed(1)}</b> · C{" "}
+                    <b className="text-slate-200">{mTotal.c.toFixed(1)}</b> · G{" "}
+                    <b className="text-slate-200">{mTotal.f.toFixed(1)}</b> · Fib{" "}
+                    <b className="text-slate-200">{mTotal.fib.toFixed(1)}</b>
                   </span>
                 </div>
               </div>
@@ -863,21 +941,25 @@ export default function NutritionDashboard({
       </section>
 
       {/* TACO Calculator (with Fuzzy Search) */}
-      <TacoSwapCalculator />
+      <div className="section-enter" style={{ "--enter-delay": "150ms" } as React.CSSProperties}>
+        <TacoSwapCalculator />
+      </div>
 
       {/* Daily Check-in + History */}
-      <CheckinHistorySection
-        activeDate={activeDate}
-        selectedOptions={selectedOptions}
-        waterMl={waterMl}
-        dailyLogs={dailyLogs}
-        initialWeightKg={
-          latestReal ? latestReal.realizedKg : Number(settings.start_weight_kg)
-        }
-        onSelectActiveDate={handleSelectActiveDate}
-        onSaveCheckin={handleSaveCheckin}
-        onDeleteCheckin={handleDeleteCheckin}
-      />
+      <div className="section-enter" style={{ "--enter-delay": "175ms" } as React.CSSProperties}>
+        <CheckinHistorySection
+          activeDate={activeDate}
+          selectedOptions={selectedOptions}
+          waterMl={waterMl}
+          dailyLogs={dailyLogs}
+          initialWeightKg={
+            latestReal ? latestReal.realizedKg : Number(settings.start_weight_kg)
+          }
+          onSelectActiveDate={handleSelectActiveDate}
+          onSaveCheckin={handleSaveCheckin}
+          onDeleteCheckin={handleDeleteCheckin}
+        />
+      </div>
 
       <ChangePinModal open={pinModalOpen} onClose={() => setPinModalOpen(false)} />
       <ProtocolCycleModal

@@ -396,34 +396,39 @@ export default function XiaomiScalePanel({
           : "text-[var(--muted-foreground)]";
 
   return (
-    <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-3.5 space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--foreground)]">
-            <span>⚖️ Balança Xiaomi Mi Body Composition Scale 2</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              Supabase
+    <div className="surface-inset rounded-xl p-4 space-y-4">
+      <div className="flex items-start justify-between gap-2.5">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-xs font-semibold text-white">
+            <span className="truncate">Xiaomi Scale 2</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.05] text-emerald-400 border border-white/[0.08]">
+              BLE
             </span>
           </div>
-          <div className={`text-[11px] mt-0.5 ${statusColor}`}>
-            {syncing ? "⏳ Sincronizando medição com o Supabase..." : status.text}
+          <div className={`text-[11px] mt-1 leading-snug ${statusColor}`}>
+            {syncing ? "Sincronizando medição com o Supabase..." : status.text}
           </div>
         </div>
         <button
           type="button"
           onClick={() => void handleConnect()}
-          className="shrink-0 px-3 py-1.5 rounded text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition cursor-pointer"
+          className={`btn-press shrink-0 h-8 px-3 rounded-lg text-xs font-semibold cursor-pointer ${
+            connected
+              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/35"
+              : "bg-emerald-500 text-[#032014] hover:bg-emerald-400"
+          }`}
         >
-          {connected ? "✅ Conectada" : "🔗 Conectar balança"}
+          {connected ? "Conectada" : "Conectar"}
         </button>
       </div>
 
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold text-emerald-400">
+      {/* Live Weight Telemetry Readout */}
+      <div className="rounded-xl bg-[#090c11] border border-white/[0.06] px-4 py-3 flex items-baseline gap-2">
+        <span className="text-3xl sm:text-[34px] font-semibold font-mono tabular-nums tracking-tight text-emerald-400">
           {liveWeight !== "—" ? liveWeight : latestMeasurement ? fmt(Number(latestMeasurement.weight_kg), 2) : "—"}
         </span>
-        <span className="text-xs text-[var(--muted-foreground)]">kg</span>
-        <span className="text-[11px] text-[var(--muted-foreground)] ml-auto">{liveFlag}</span>
+        <span className="text-xs font-mono text-[var(--muted-foreground)]">kg</span>
+        <span className="text-[11px] text-[var(--muted-foreground)] ml-auto text-right">{liveFlag}</span>
       </div>
 
       {/* 9-card body composition grid */}
@@ -438,40 +443,43 @@ export default function XiaomiScalePanel({
               ["Músculo", latestComp.muscle_kg !== null ? `${fmt(latestComp.muscle_kg)} kg` : "—"],
               ["Água", latestComp.water_pct !== null ? `${fmt(latestComp.water_pct)} %` : "—"],
               ["Massa óssea", latestComp.bone_kg !== null ? `${fmt(latestComp.bone_kg)} kg` : "—"],
-              ["Gord. visceral", latestComp.visceral_fat !== null ? fmt(latestComp.visceral_fat, 0) : "—"],
+              ["Visceral", latestComp.visceral_fat !== null ? fmt(latestComp.visceral_fat, 0) : "—"],
               ["Impedância", latestMeasurement.impedance_ohm ? `${latestMeasurement.impedance_ohm} Ω` : "—"],
             ].map(([label, val]) => (
-              <div key={label} className="bg-[var(--card)] border border-[var(--border)] rounded p-2">
+              <div
+                key={label}
+                className="bg-white/[0.025] border border-white/[0.06] rounded-lg px-2.5 py-2"
+              >
                 <div className="text-[10px] text-[var(--muted-foreground)]">{label}</div>
-                <div className="text-sm font-semibold text-[var(--foreground)]">{val}</div>
+                <div className="text-xs font-mono font-semibold tabular-nums text-white mt-0.5">{val}</div>
               </div>
             ))}
           </div>
-          <div className="text-[10px] text-[var(--muted-foreground)]">
-            Última pesagem salva:{" "}
+          <div className="text-[11px] text-[var(--muted-foreground)] font-mono tabular-nums">
+            Última:{" "}
             {new Date(latestMeasurement.measured_at).toLocaleDateString("pt-BR")}{" "}
             {new Date(latestMeasurement.measured_at).toLocaleTimeString("pt-BR", {
               hour: "2-digit",
               minute: "2-digit",
             })}
             {latestMeasurement.impedance_ohm
-              ? " • com bioimpedância"
-              : " • sem bioimpedância (pise descalço para medir gordura)"}
+              ? " • bioimpedância OK"
+              : " • sem bioimpedância"}
           </div>
         </>
       ) : (
-        <div className="text-[11px] text-[var(--muted-foreground)]">
-          Nenhuma medição da balança sincronizada ainda. Conecte via Bluetooth ou adicione uma medição abaixo para cruzar com a curva projetada!
+        <div className="text-xs text-[var(--muted-foreground)] leading-relaxed">
+          Nenhuma medição sincronizada ainda. Conecte via Bluetooth ou lance uma medição abaixo para cruzar com a curva projetada.
         </div>
       )}
 
       {/* Profile settings synced to Supabase */}
-      <details className="text-xs">
-        <summary className="cursor-pointer text-[11px] text-emerald-400">
-          Perfil para cálculo de gordura / músculo ({profile.height_cm} cm • {profile.age_years} anos •{" "}
-          {profile.sex === 1 ? "Masc." : "Fem."})
+      <details className="text-xs border-t border-white/[0.06] pt-3">
+        <summary className="cursor-pointer text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors tabular-nums">
+          Perfil bioimpedância ({profile.height_cm} cm • {profile.age_years}a •{" "}
+          {profile.sex === 1 ? "M" : "F"})
         </summary>
-        <div className="flex flex-wrap items-end gap-2 pt-2">
+        <div className="flex flex-wrap items-end gap-2 pt-2.5">
           <label className="text-[10px] text-[var(--muted-foreground)]">
             Altura (cm)
             <input
@@ -479,7 +487,7 @@ export default function XiaomiScalePanel({
               step={1}
               value={heightInput}
               onChange={(e) => setHeightInput(e.target.value)}
-              className="block w-20 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+              className="input-field block w-20 h-8 rounded-lg px-2 text-xs font-mono tabular-nums mt-1"
             />
           </label>
           <label className="text-[10px] text-[var(--muted-foreground)]">
@@ -489,7 +497,7 @@ export default function XiaomiScalePanel({
               step={1}
               value={ageInput}
               onChange={(e) => setAgeInput(e.target.value)}
-              className="block w-16 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+              className="input-field block w-16 h-8 rounded-lg px-2 text-xs font-mono tabular-nums mt-1"
             />
           </label>
           <label className="text-[10px] text-[var(--muted-foreground)]">
@@ -497,7 +505,7 @@ export default function XiaomiScalePanel({
             <select
               value={sexInput}
               onChange={(e) => setSexInput(e.target.value)}
-              className="block bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+              className="input-field block h-8 rounded-lg px-2 text-xs mt-1"
             >
               <option value="1">Masculino</option>
               <option value="0">Feminino</option>
@@ -507,26 +515,26 @@ export default function XiaomiScalePanel({
             type="button"
             disabled={savingProfile}
             onClick={() => void handleSaveProfileClick()}
-            className="px-3 py-1 rounded text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 disabled:opacity-50 cursor-pointer"
+            className="btn-press h-8 px-3 rounded-lg text-xs font-semibold bg-emerald-500 text-[#032014] hover:bg-emerald-400 disabled:opacity-50 cursor-pointer"
           >
             {savingProfile ? "Salvando..." : "Salvar"}
           </button>
         </div>
       </details>
 
-      {/* Manual bioimpedance fallback (for iPhone / manual sync) */}
-      <details className="text-xs">
-        <summary className="cursor-pointer text-[11px] text-sky-400">
-          ➕ Registrar leitura manual da balança (com impedância opcional)
+      {/* Manual bioimpedance fallback */}
+      <details className="text-xs border-t border-white/[0.06] pt-3">
+        <summary className="cursor-pointer text-[11px] font-medium text-sky-400 hover:text-sky-300 transition-colors">
+          Registrar leitura manual (com impedância)
         </summary>
-        <div className="flex flex-wrap items-end gap-2 pt-2">
+        <div className="flex flex-wrap items-end gap-2 pt-2.5">
           <label className="text-[10px] text-[var(--muted-foreground)]">
             Data
             <input
               type="date"
               value={manualDate}
               onChange={(e) => setManualDate(e.target.value)}
-              className="block bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+              className="input-field block h-8 rounded-lg px-2 text-xs font-mono tabular-nums mt-1"
             />
           </label>
           <label className="text-[10px] text-[var(--muted-foreground)]">
@@ -537,7 +545,7 @@ export default function XiaomiScalePanel({
               placeholder="86.10"
               value={manualWeight}
               onChange={(e) => setManualWeight(e.target.value)}
-              className="block w-24 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+              className="input-field block w-24 h-8 rounded-lg px-2 text-xs font-mono tabular-nums mt-1"
             />
           </label>
           <label className="text-[10px] text-[var(--muted-foreground)]">
@@ -548,40 +556,40 @@ export default function XiaomiScalePanel({
               placeholder="Opcional"
               value={manualImpedance}
               onChange={(e) => setManualImpedance(e.target.value)}
-              className="block w-24 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--foreground)] mt-0.5"
+              className="input-field block w-24 h-8 rounded-lg px-2 text-xs font-mono tabular-nums mt-1"
             />
           </label>
           <button
             type="button"
             disabled={syncing || !manualWeight}
             onClick={() => void handleManualScaleSubmit()}
-            className="px-3 py-1 rounded text-xs font-semibold bg-sky-500 text-slate-950 hover:bg-sky-400 disabled:opacity-50 cursor-pointer"
+            className="btn-press h-8 px-3 rounded-lg text-xs font-semibold bg-sky-500 text-slate-950 hover:bg-sky-400 disabled:opacity-50 cursor-pointer"
           >
             Salvar
           </button>
         </div>
       </details>
 
-      {/* Scale History Table (from Supabase) */}
-      <details className="text-xs">
-        <summary className="cursor-pointer text-[11px] text-emerald-400">
-          Histórico da balança no Supabase ({scaleMeasurements.length} leitura(s) • 1ª do dia vai para o gráfico)
+      {/* Scale History Table */}
+      <details className="text-xs border-t border-white/[0.06] pt-3">
+        <summary className="cursor-pointer text-[11px] font-medium text-slate-300 hover:text-white transition-colors tabular-nums">
+          Histórico da balança ({scaleMeasurements.length})
         </summary>
-        <div className="overflow-x-auto mt-2">
-          <table className="w-full text-[11px]">
-            <thead className="text-[var(--muted-foreground)]">
+        <div className="overflow-x-auto mt-2.5">
+          <table className="w-full text-[11px] font-mono tabular-nums">
+            <thead className="text-[10px] uppercase tracking-wider text-[var(--muted-foreground)]">
               <tr>
-                <th className="text-left py-1">Data / Hora</th>
-                <th className="text-left py-1">Peso</th>
-                <th className="text-left py-1">Gordura</th>
-                <th className="text-left py-1">Músculo</th>
-                <th className="text-right py-1"></th>
+                <th className="text-left py-1.5 font-medium">Data / Hora</th>
+                <th className="text-left py-1.5 font-medium">Peso</th>
+                <th className="text-left py-1.5 font-medium">Gord.</th>
+                <th className="text-left py-1.5 font-medium">Músc.</th>
+                <th className="text-right py-1.5"></th>
               </tr>
             </thead>
             <tbody>
               {scaleMeasurements.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-1.5 text-[var(--muted-foreground)]">
+                  <td colSpan={5} className="py-2 font-sans text-[var(--muted-foreground)]">
                     Sem registros da balança ainda.
                   </td>
                 </tr>
@@ -591,30 +599,30 @@ export default function XiaomiScalePanel({
                   const d = new Date(m.measured_at);
                   const isFirst = firstOfDayIds.has(m.id);
                   return (
-                    <tr key={m.id} className="border-t border-[var(--border)]">
-                      <td className="py-1 pr-2 whitespace-nowrap">
+                    <tr key={m.id} className="border-t border-white/[0.06]">
+                      <td className="py-1.5 pr-2 whitespace-nowrap text-slate-200">
                         {d.toLocaleDateString("pt-BR")}{" "}
                         {d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                         {isFirst ? (
                           <span
                             title="Primeira pesagem do dia (usada no gráfico Projetado × Realizado)"
-                            className="ml-1 text-[9px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold"
+                            className="ml-1 text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-300 font-semibold"
                           >
                             1ª
                           </span>
                         ) : null}
                       </td>
-                      <td className="py-1 pr-2 font-semibold">{fmt(Number(m.weight_kg), 2)}</td>
-                      <td className="py-1 pr-2">
+                      <td className="py-1.5 pr-2 font-semibold text-white">{fmt(Number(m.weight_kg), 2)}</td>
+                      <td className="py-1.5 pr-2 text-slate-300">
                         {c.body_fat_pct !== null ? `${fmt(c.body_fat_pct)}%` : "—"}
                       </td>
-                      <td className="py-1 pr-2">{c.muscle_kg !== null ? fmt(c.muscle_kg) : "—"}</td>
-                      <td className="py-1 text-right">
+                      <td className="py-1.5 pr-2 text-slate-300">{c.muscle_kg !== null ? fmt(c.muscle_kg) : "—"}</td>
+                      <td className="py-1.5 text-right">
                         <button
                           type="button"
                           onClick={() => void onDeleteMeasurement(m.id)}
                           title="Excluir leitura"
-                          className="text-rose-400 hover:underline cursor-pointer"
+                          className="btn-press text-rose-400/80 hover:text-rose-300 cursor-pointer px-1"
                         >
                           ✕
                         </button>

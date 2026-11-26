@@ -58,23 +58,23 @@ export default function ChangePinModal({ open, onClose }: ChangePinModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 modal-backdrop-enter"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4">
-        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+      <div className="surface-modal modal-panel-enter rounded-2xl w-full max-w-sm p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-white/[0.07] pb-3.5">
           <div>
-            <h2 className="text-base font-bold text-white">⚙️ Alterar PIN de Acesso</h2>
-            <p className="text-xs text-[var(--muted-foreground)]">
-              Salvo com hash seguro no Supabase (sincronizado em todos os dispositivos)
+            <h2 className="heading-section text-base font-semibold text-white">Alterar PIN de Acesso</h2>
+            <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+              Salvo com hash seguro no Supabase
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-sm px-2 py-1 cursor-pointer"
+            className="btn-press text-slate-400 hover:text-white text-sm px-2 py-1 rounded-lg cursor-pointer"
           >
             ✕
           </button>

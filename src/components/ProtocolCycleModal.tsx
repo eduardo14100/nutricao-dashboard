@@ -211,58 +211,68 @@ export default function ProtocolCycleModal({
     }
   };
 
+  const tabIndex = tab === "new" ? 0 : tab === "edit" ? 1 : 2;
+
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto modal-backdrop-enter"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 my-auto">
-        <div className="flex items-start justify-between border-b border-[var(--border)] pb-3 gap-2">
+      <div className="surface-modal modal-panel-enter rounded-2xl w-full max-w-lg p-5 sm:p-6 space-y-4 my-auto">
+        <div className="flex items-start justify-between border-b border-white/[0.07] pb-3.5 gap-2">
           <div>
-            <h2 className="text-base font-bold text-white">🗓️ Ciclos &amp; Protocolo</h2>
+            <h2 className="heading-section text-base font-semibold text-white">Ciclos &amp; Protocolo</h2>
             <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
-              Defina datas, peso inicial e meta sem depender de datas fixas no código.
+              Gerencie datas, peso inicial e meta sem depender de valores fixos.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-sm px-2 py-1 cursor-pointer"
+            className="btn-press text-slate-400 hover:text-white text-sm px-2 py-1 rounded-lg cursor-pointer"
           >
             ✕
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="grid grid-cols-3 gap-1.5 bg-[var(--background)] p-1 rounded-xl border border-[var(--border)] text-xs font-semibold">
+        {/* Sliding segmented tabs */}
+        <div className="relative grid grid-cols-3 bg-[#090c11] p-1 rounded-xl border border-white/[0.08] text-xs font-semibold">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1 bottom-1 left-1 w-[calc((100%-8px)/3)] rounded-lg bg-emerald-500 shadow-sm"
+            style={{
+              transform: `translateX(${tabIndex * 100}%)`,
+              transition: "transform 220ms var(--ease-out)",
+            }}
+          />
           <button
             type="button"
             onClick={() => switchTab("new")}
-            className={`py-1.5 rounded-lg transition cursor-pointer ${
-              tab === "new" ? "bg-emerald-500 text-slate-950" : "text-slate-300 hover:text-white"
+            className={`relative z-10 py-1.5 rounded-lg transition-colors duration-150 cursor-pointer ${
+              tab === "new" ? "text-[#032014]" : "text-slate-300 hover:text-white"
             }`}
           >
-            🚀 Novo Ciclo
+            Novo Ciclo
           </button>
           <button
             type="button"
             onClick={() => switchTab("edit")}
-            className={`py-1.5 rounded-lg transition cursor-pointer ${
-              tab === "edit" ? "bg-emerald-500 text-slate-950" : "text-slate-300 hover:text-white"
+            className={`relative z-10 py-1.5 rounded-lg transition-colors duration-150 cursor-pointer ${
+              tab === "edit" ? "text-[#032014]" : "text-slate-300 hover:text-white"
             }`}
           >
-            ✏️ Editar Atual
+            Editar Atual
           </button>
           <button
             type="button"
             onClick={() => switchTab("history")}
-            className={`py-1.5 rounded-lg transition cursor-pointer ${
-              tab === "history" ? "bg-emerald-500 text-slate-950" : "text-slate-300 hover:text-white"
+            className={`relative z-10 py-1.5 rounded-lg transition-colors duration-150 cursor-pointer tabular-nums ${
+              tab === "history" ? "text-[#032014]" : "text-slate-300 hover:text-white"
             }`}
           >
-            📚 Histórico ({cycles.length})
+            Histórico ({cycles.length})
           </button>
         </div>
 

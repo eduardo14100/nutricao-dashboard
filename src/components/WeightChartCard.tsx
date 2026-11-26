@@ -217,7 +217,9 @@ function ProjectedVsRealizedSvg({
       >
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10b981" stopOpacity={isModal ? 0.25 : 0.2} />
+            <stop offset="0%" stopColor="#10b981" stopOpacity={isModal ? 0.24 : 0.18} />
+            <stop offset="38%" stopColor="#10b981" stopOpacity={isModal ? 0.11 : 0.08} />
+            <stop offset="76%" stopColor="#10b981" stopOpacity={isModal ? 0.03 : 0.02} />
             <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
           </linearGradient>
         </defs>
@@ -231,16 +233,17 @@ function ProjectedVsRealizedSvg({
               x2={w - padR}
               y2={g.y}
               stroke="currentColor"
-              strokeOpacity="0.12"
-              strokeDasharray="3 3"
+              strokeOpacity="0.075"
+              strokeDasharray="2 4"
             />
             <text
               x={padL - 10}
               y={g.y + 4}
               textAnchor="end"
-              fontSize={isModal ? 12 : 11}
+              fontSize={isModal ? 11.5 : 10.5}
+              fontFamily="var(--font-mono)"
               fill="currentColor"
-              opacity="0.7"
+              opacity="0.58"
             >
               {`${g.val.toFixed(1)} kg`}
             </text>
@@ -558,27 +561,28 @@ export default function WeightChartCard({
 
   return (
     <>
-      <section className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border)] pb-3">
+      <section className="surface-card rounded-2xl p-5 sm:p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/[0.06] pb-4">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-semibold text-[var(--foreground)]">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="heading-section text-base sm:text-lg font-semibold text-white">
                 Acompanhamento de Peso — Projetado × Realizado
               </h2>
-              <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-medium border border-emerald-500/30">
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/12 text-emerald-400 font-medium border border-emerald-500/25">
                 EWMA α=0.15
               </span>
             </div>
-            <p className="text-xs text-[var(--muted-foreground)] mt-1">
-              Cruzamento dia a dia ({seriesData.realizedDaily.length} dia(s) realizado(s) no Supabase • 1ª pesagem/jejum) sincronizado com a balança Xiaomi.
+            <p className="text-xs text-[var(--muted-foreground)] mt-1 tabular-nums">
+              Cruzamento dia a dia ({seriesData.realizedDaily.length} dia(s) realizado(s) • 1ª pesagem em jejum) sincronizado com a balança Xiaomi.
             </p>
           </div>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="self-start sm:self-auto flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition shadow-sm cursor-pointer"
+            className="btn-press self-start sm:self-auto flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg bg-emerald-500/12 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer"
           >
-            <span>Maximizar Gráfico ⛶</span>
+            <span>Expandir gráfico</span>
+            <span aria-hidden="true">↗</span>
           </button>
         </div>
 
@@ -586,27 +590,31 @@ export default function WeightChartCard({
           {/* Left 8 cols: Wide Projected vs Realized Chart + Controls + Day-by-Day Table */}
           <div className="lg:col-span-8 space-y-4">
             {/* Projected vs Realized KPI Strip */}
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2.5">
-                <div className="text-[11px] text-sky-400 font-medium">Projetado Hoje</div>
-                <div className="text-base font-bold text-white mt-0.5">
-                  {seriesData.projectedTodayKg.toFixed(1)} kg
+            <div className="grid grid-cols-3 gap-3">
+              <div className="kpi-tile rounded-xl p-3">
+                <div className="text-[11px] font-mono uppercase tracking-wider text-sky-400/90">Projetado Hoje</div>
+                <div className="text-lg font-semibold font-mono tabular-nums text-white mt-1">
+                  {seriesData.projectedTodayKg.toFixed(1)}
+                  <span className="text-xs font-sans font-normal text-[var(--muted-foreground)] ml-1">kg</span>
                 </div>
               </div>
-              <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2.5">
-                <div className="text-[11px] text-amber-400 font-medium">
+              <div className="kpi-tile rounded-xl p-3">
+                <div className="text-[11px] font-mono uppercase tracking-wider text-amber-400/90">
                   Realizado ({latest ? latest.label : "—"})
                 </div>
-                <div className="text-base font-bold text-white mt-0.5">
-                  {latest ? `${latest.realizedKg.toFixed(1)} kg` : "—"}
+                <div className="text-lg font-semibold font-mono tabular-nums text-white mt-1">
+                  {latest ? latest.realizedKg.toFixed(1) : "—"}
+                  {latest ? (
+                    <span className="text-xs font-sans font-normal text-[var(--muted-foreground)] ml-1">kg</span>
+                  ) : null}
                 </div>
               </div>
-              <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2.5">
-                <div className="text-[11px] text-[var(--muted-foreground)] font-medium">
-                  Desvio (Real − Proj)
+              <div className="kpi-tile rounded-xl p-3">
+                <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+                  Desvio
                 </div>
                 <div
-                  className={`text-base font-bold mt-0.5 ${
+                  className={`text-lg font-semibold font-mono tabular-nums mt-1 ${
                     !latest
                       ? "text-slate-400"
                       : latest.deltaKg <= 0
@@ -615,32 +623,35 @@ export default function WeightChartCard({
                   }`}
                 >
                   {latest
-                    ? `${latest.deltaKg <= 0 ? "" : "+"}${latest.deltaKg.toFixed(2)} kg`
+                    ? `${latest.deltaKg <= 0 ? "" : "+"}${latest.deltaKg.toFixed(2)}`
                     : "—"}
+                  {latest ? (
+                    <span className="text-xs font-sans font-normal opacity-75 ml-1">kg</span>
+                  ) : null}
                 </div>
               </div>
             </div>
 
             {/* Wide Main SVG Chart */}
-            <div className="relative bg-[var(--background)] border border-[var(--border)] rounded-xl p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted-foreground)] mb-2">
-                <div className="flex flex-wrap items-center gap-3">
+            <div className="relative surface-inset rounded-xl p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted-foreground)] mb-2.5">
+                <div className="flex flex-wrap items-center gap-3.5 text-[11px]">
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-0.5 border-b-2 border-dashed border-sky-400 inline-block" /> Projetado (Meta)
+                    <span className="w-3 h-0.5 border-b-2 border-dashed border-sky-400 inline-block" /> Projetado
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> Realizado (1ª do dia)
+                    <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> Realizado (1ª)
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-0.5 bg-emerald-400 inline-block" /> Tendência EWMA
+                    <span className="w-3 h-0.5 bg-emerald-400 inline-block rounded-full" /> Tendência EWMA
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setModalOpen(true)}
-                  className="text-emerald-400 hover:text-emerald-300 text-xs font-medium cursor-pointer"
+                  className="text-emerald-400 hover:text-emerald-300 text-[11px] font-medium cursor-pointer transition-colors"
                 >
-                  Expandir tela cheia ↗
+                  Tela cheia ↗
                 </button>
               </div>
 
@@ -653,55 +664,55 @@ export default function WeightChartCard({
                 onSelectDate={handleSelectDate}
               />
 
-              <div className="text-[11px] text-slate-400 mt-1.5 flex flex-wrap justify-between items-center gap-2">
-                <span>💡 Passe o mouse ou clique em qualquer dia para inspecionar Projetado × Realizado</span>
+              <div className="text-[11px] text-[var(--muted-foreground)] mt-2 flex flex-wrap justify-between items-center gap-2">
+                <span>Passe o cursor ou clique em um dia para inspecionar os dados</span>
                 <button
                   type="button"
                   onClick={() => setModalOpen(true)}
-                  className="text-emerald-400 font-medium hover:underline cursor-pointer"
+                  className="text-emerald-400 font-medium hover:text-emerald-300 transition-colors cursor-pointer"
                 >
-                  Abrir simulador completo ↗
+                  Simulador completo ↗
                 </button>
               </div>
             </div>
 
             {/* Manual weigh-in + deficit slider side by side */}
-            <div className="bg-[var(--background)] border border-[var(--border)] rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="space-y-1.5">
-                <div className="text-xs font-medium text-[var(--foreground)]">
-                  Lançar Pesagem Manual por Data (Supabase):
+            <div className="surface-inset rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-slate-200">
+                  Lançar Pesagem Manual por Data
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="date"
                     value={dateInput}
                     onChange={(e) => setDateInput(e.target.value)}
-                    className="bg-[var(--card)] border border-[var(--border)] rounded px-2.5 py-1.5 text-xs text-[var(--foreground)]"
+                    className="input-field h-8 rounded-lg px-2.5 text-xs font-mono tabular-nums"
                   />
                   <input
                     type="number"
                     step="0.1"
                     value={weightInput}
                     onChange={(e) => setWeightInput(e.target.value)}
-                    className="w-24 bg-[var(--card)] border border-[var(--border)] rounded px-2.5 py-1.5 text-xs text-[var(--foreground)] font-semibold"
+                    className="input-field h-8 w-24 rounded-lg px-2.5 text-xs font-mono font-semibold tabular-nums"
                     placeholder="86.0"
                   />
                   <button
                     type="button"
                     disabled={saving}
                     onClick={() => void handleSaveManual()}
-                    className="px-3.5 py-1.5 rounded text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition disabled:opacity-50 cursor-pointer"
+                    className="btn-press h-8 px-3.5 rounded-lg text-xs font-semibold bg-emerald-500 text-[#032014] hover:bg-emerald-400 disabled:opacity-50 cursor-pointer"
                   >
                     {saving ? "Salvando..." : "Salvar"}
                   </button>
                 </div>
-                {feedback ? <div className="text-xs text-emerald-400 font-medium">{feedback}</div> : null}
+                {feedback ? <div className="text-xs text-emerald-400 font-medium content-swap">{feedback}</div> : null}
               </div>
 
-              <div className="md:border-l md:border-[var(--border)] md:pl-4 space-y-1.5 min-w-[210px]">
+              <div className="md:border-l md:border-white/[0.07] md:pl-4 space-y-2 min-w-[220px]">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[var(--muted-foreground)]">Déficit Projetado:</span>
-                  <span className="font-bold text-emerald-400">{simDeficit} kcal/dia</span>
+                  <span className="text-[var(--muted-foreground)]">Déficit projetado</span>
+                  <span className="font-mono font-semibold tabular-nums text-emerald-400">{simDeficit} kcal/dia</span>
                 </div>
                 <input
                   type="range"
@@ -710,53 +721,53 @@ export default function WeightChartCard({
                   step={10}
                   value={simDeficit}
                   onChange={(e) => onDeficitChange(Number(e.target.value))}
-                  className="w-full accent-emerald-500 cursor-pointer"
+                  className="precision-slider w-full"
                 />
-                <div className="flex justify-between text-[10px] text-[var(--muted-foreground)]">
-                  <span>300 kcal</span>
-                  <span>Dieta: {intakeKcal} kcal</span>
-                  <span>800 kcal</span>
+                <div className="flex justify-between text-[10px] font-mono tabular-nums text-[var(--muted-foreground)]">
+                  <span>300</span>
+                  <span className="text-slate-300">Dieta {intakeKcal} kcal</span>
+                  <span>800</span>
                 </div>
               </div>
             </div>
 
             {/* Collapsible Day-by-Day Table */}
-            <details className="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3.5 text-xs">
-              <summary className="cursor-pointer text-xs font-semibold text-emerald-400">
-                📊 Ver tabela Projetado × Realizado dia a dia ({seriesData.realizedDaily.length} dia(s))
+            <details className="surface-inset rounded-xl p-3.5 text-xs">
+              <summary className="cursor-pointer text-xs font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
+                Tabela dia a dia — Projetado × Realizado ({seriesData.realizedDaily.length} dia(s))
               </summary>
-              <div className="overflow-x-auto mt-2.5 max-h-64 overflow-y-auto">
-                <table className="w-full text-xs text-left">
-                  <thead className="text-[11px] text-[var(--muted-foreground)] border-b border-[var(--border)]">
+              <div className="overflow-x-auto mt-3 max-h-64 overflow-y-auto">
+                <table className="w-full text-xs text-left font-mono tabular-nums">
+                  <thead className="text-[10px] uppercase tracking-wider text-[var(--muted-foreground)] border-b border-white/[0.07]">
                     <tr>
-                      <th className="py-1.5 pr-3">Data</th>
-                      <th className="py-1.5 pr-3">Projetado</th>
-                      <th className="py-1.5 pr-3">Realizado</th>
-                      <th className="py-1.5 pr-3">Desvio</th>
-                      <th className="py-1.5 pr-3">EWMA</th>
-                      <th className="py-1.5 pr-3">Gordura</th>
-                      <th className="py-1.5">Músculo</th>
+                      <th className="py-2 pr-3 font-medium">Data</th>
+                      <th className="py-2 pr-3 font-medium">Projetado</th>
+                      <th className="py-2 pr-3 font-medium">Realizado</th>
+                      <th className="py-2 pr-3 font-medium">Desvio</th>
+                      <th className="py-2 pr-3 font-medium">EWMA</th>
+                      <th className="py-2 pr-3 font-medium">Gordura</th>
+                      <th className="py-2 font-medium">Músculo</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--border)]">
+                  <tbody className="divide-y divide-white/[0.05]">
                     {[...seriesData.realizedDaily].reverse().map((r) => (
                       <tr key={r.date}>
-                        <td className="py-1.5 pr-3 whitespace-nowrap font-medium text-white">{r.fullDateBR}</td>
-                        <td className="py-1.5 pr-3 text-sky-300">{r.projectedKg.toFixed(2)} kg</td>
-                        <td className="py-1.5 pr-3 font-bold text-white">{r.realizedKg.toFixed(2)} kg</td>
+                        <td className="py-2 pr-3 whitespace-nowrap font-medium text-white">{r.fullDateBR}</td>
+                        <td className="py-2 pr-3 text-sky-300">{r.projectedKg.toFixed(2)} kg</td>
+                        <td className="py-2 pr-3 font-semibold text-white">{r.realizedKg.toFixed(2)} kg</td>
                         <td
-                          className={`py-1.5 pr-3 font-bold ${
+                          className={`py-2 pr-3 font-semibold ${
                             r.deltaKg <= 0 ? "text-emerald-400" : "text-amber-400"
                           }`}
                         >
                           {r.deltaKg <= 0 ? "" : "+"}
                           {r.deltaKg.toFixed(2)} kg
                         </td>
-                        <td className="py-1.5 pr-3 text-emerald-400">{r.ewmaKg.toFixed(2)} kg</td>
-                        <td className="py-1.5 pr-3 text-slate-300">
+                        <td className="py-2 pr-3 text-emerald-400">{r.ewmaKg.toFixed(2)} kg</td>
+                        <td className="py-2 pr-3 text-slate-300">
                           {r.bodyFatPct !== null ? `${r.bodyFatPct.toFixed(1)}%` : "—"}
                         </td>
-                        <td className="py-1.5 text-slate-300">
+                        <td className="py-2 text-slate-300">
                           {r.muscleKg !== null ? `${r.muscleKg.toFixed(1)} kg` : "—"}
                         </td>
                       </tr>
@@ -767,7 +778,7 @@ export default function WeightChartCard({
             </details>
           </div>
 
-          {/* Right 4 cols: Xiaomi Mi Body Composition Scale 2 (aligned to top, no stretching) */}
+          {/* Right 4 cols: Xiaomi Mi Body Composition Scale 2 */}
           <div className="lg:col-span-4">
             <XiaomiScalePanel
               settings={settings}
@@ -784,48 +795,49 @@ export default function WeightChartCard({
       {modalOpen ? (
         <div
           ref={modalRef}
-          className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md overflow-y-auto p-2 sm:p-5 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md overflow-y-auto p-2 sm:p-5 flex items-center justify-center modal-backdrop-enter"
           onClick={(e) => {
             if (e.target === e.currentTarget) setModalOpen(false);
           }}
         >
-          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl w-full max-w-5xl shadow-2xl p-4 sm:p-6 space-y-4 max-h-[96vh] overflow-y-auto">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border)] pb-3">
+          <div className="surface-modal modal-panel-enter rounded-2xl w-full max-w-5xl p-4 sm:p-6 space-y-4 max-h-[96vh] overflow-y-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/[0.07] pb-4">
               <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-bold text-[var(--foreground)]">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h2 className="heading-section text-lg sm:text-xl font-semibold text-white">
                     Projetado × Realizado — Evolução Dia a Dia
                   </h2>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    Meta: {Number(settings.target_weight_min_kg).toFixed(1)} –{" "}
-                    {Number(settings.target_weight_max_kg).toFixed(1)} kg
+                  <span className="text-[11px] font-mono tabular-nums px-2.5 py-0.5 rounded-full font-medium bg-emerald-500/12 text-emerald-400 border border-emerald-500/25">
+                    Meta {Number(settings.target_weight_min_kg).toFixed(1)}–{Number(settings.target_weight_max_kg).toFixed(1)} kg
                   </span>
                 </div>
                 <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
-                  Balança Xiaomi (1ª pesagem/jejum) cruzada sobre a projeção EWMA (α=0.15/dia) • Supabase
+                  Balança Xiaomi (1ª pesagem/jejum) cruzada sobre a projeção EWMA (α=0.15/dia)
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={toggleFullscreen}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--background)] hover:opacity-80 cursor-pointer"
+                  className="btn-press h-8 px-3 text-xs font-medium rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-200 hover:bg-white/[0.07] cursor-pointer"
                 >
-                  {isFullscreen ? "Sair da Tela Cheia" : "⛶ Tela Cheia"}
+                  {isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 cursor-pointer"
+                  className="btn-press h-8 px-3 text-xs font-medium rounded-lg bg-white/[0.05] text-slate-300 border border-white/[0.08] hover:text-white hover:bg-white/[0.1] cursor-pointer"
                 >
-                  ✕ Fechar (Esc)
+                  Fechar (Esc)
                 </button>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="font-semibold text-[var(--foreground)]">Camadas:</span>
+            <div className="flex flex-wrap items-center justify-between gap-3 surface-inset rounded-xl p-3 text-xs">
+              <div className="flex flex-wrap items-center gap-3.5">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+                  Camadas
+                </span>
                 <label className="flex items-center gap-1.5 cursor-pointer text-sky-400 font-medium">
                   <input
                     type="checkbox"
@@ -833,7 +845,7 @@ export default function WeightChartCard({
                     onChange={(e) => setShowProjected(e.target.checked)}
                     className="accent-sky-500"
                   />
-                  <span>Projetado (Meta)</span>
+                  <span>Projetado</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer text-amber-400 font-medium">
                   <input
@@ -842,7 +854,7 @@ export default function WeightChartCard({
                     onChange={(e) => setShowRealized(e.target.checked)}
                     className="accent-amber-500"
                   />
-                  <span>Realizado (Balança)</span>
+                  <span>Realizado</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer text-emerald-400 font-medium">
                   <input
@@ -851,7 +863,7 @@ export default function WeightChartCard({
                     onChange={(e) => setShowEwma(e.target.checked)}
                     className="accent-emerald-500"
                   />
-                  <span>Tendência EWMA</span>
+                  <span>EWMA</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer text-emerald-300">
                   <input
@@ -863,8 +875,8 @@ export default function WeightChartCard({
                   <span>Faixa Alvo</span>
                 </label>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[var(--muted-foreground)]">Déficit Projetado:</span>
+              <div className="flex items-center gap-2.5">
+                <span className="text-[var(--muted-foreground)]">Déficit:</span>
                 <input
                   type="range"
                   min={300}
@@ -872,9 +884,11 @@ export default function WeightChartCard({
                   step={10}
                   value={simDeficit}
                   onChange={(e) => onDeficitChange(Number(e.target.value))}
-                  className="w-28 sm:w-36 accent-emerald-500 cursor-pointer"
+                  className="precision-slider w-28 sm:w-36"
                 />
-                <span className="font-bold text-emerald-400 w-16 text-right">{simDeficit} kcal</span>
+                <span className="font-mono font-semibold tabular-nums text-emerald-400 w-16 text-right">
+                  {simDeficit} kcal
+                </span>
               </div>
             </div>
 
