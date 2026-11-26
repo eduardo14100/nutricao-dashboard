@@ -7,18 +7,22 @@ import {
   calcMealMacros,
   computeBalanceScore,
   computeDailyTotals,
+  daysBetweenISO,
   DEFAULT_SELECTED_MEALS,
   formatFullDateBR,
+  formatShortDateBR,
   MEALS_DATA,
   TACO_FOODS,
   type DailyLogDTO,
   type OptionKey,
+  type ProtocolCycleDTO,
   type SelectedMeals,
   type UserSettingsDTO,
   type WeightLogDTO,
 } from "@/data/nutrition";
 import { buildProjectedVsRealizedSeries, type ScaleMeasurementDTO } from "@/data/scale";
 import ChangePinModal from "./ChangePinModal";
+import ProtocolCycleModal from "./ProtocolCycleModal";
 import WeightChartCard from "./WeightChartCard";
 import TacoSwapCalculator from "./TacoSwapCalculator";
 import CheckinHistorySection from "./CheckinHistorySection";
@@ -30,6 +34,8 @@ interface NutritionDashboardProps {
   initialDailyLogs: DailyLogDTO[];
   initialTodayLog: DailyLogDTO;
   initialScaleMeasurements: ScaleMeasurementDTO[];
+  initialCycles?: ProtocolCycleDTO[];
+  initialCyclesHistoryAvailable?: boolean;
 }
 
 export default function NutritionDashboard({
@@ -39,6 +45,8 @@ export default function NutritionDashboard({
   initialDailyLogs,
   initialTodayLog,
   initialScaleMeasurements,
+  initialCycles = [],
+  initialCyclesHistoryAvailable = true,
 }: NutritionDashboardProps) {
   const router = useRouter();
   const [activeDate, setActiveDate] = useState<string>(initialActiveDate);
@@ -48,6 +56,10 @@ export default function NutritionDashboard({
   const [scaleMeasurements, setScaleMeasurements] =
     useState<ScaleMeasurementDTO[]>(initialScaleMeasurements);
   const [dailyLogs, setDailyLogs] = useState<DailyLogDTO[]>(initialDailyLogs);
+  const [cycles, setCycles] = useState<ProtocolCycleDTO[]>(initialCycles);
+  const [cyclesHistoryAvailable, setCyclesHistoryAvailable] = useState<boolean>(
+    initialCyclesHistoryAvailable
+  );
 
   const [selectedOptions, setSelectedOptions] = useState<SelectedMeals>(
     initialTodayLog.selected_options ?? DEFAULT_SELECTED_MEALS
@@ -56,6 +68,7 @@ export default function NutritionDashboard({
 
   const [syncState, setSyncState] = useState<"saved" | "saving" | "error">("saved");
   const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [cycleModalOpen, setCycleModalOpen] = useState(false);
 
   const deficitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -280,9 +293,9 @@ export default function NutritionDashboard({
       body: JSON.stringify({ action: "reset" }),
     });
     if (res.ok) {
-      const data = (await res.json()) as { weights?: WeightLogDTO[] };
+      const data = (await res.json()) as { weights?: WeightLogDTO[]; simDeficit?: number };
       if (data.weights) setWeights(data.weights);
-      setSimDeficit(530);
+      setSimDeficit(data.simDeficit ?? settings.sim_deficit);
       setSyncState("saved");
     } else {
       setSyncState("error");
@@ -437,6 +450,12 @@ export default function NutritionDashboard({
     [totals, settings, waterMl]
   );
 
+  const protocolDays = Math.max(
+    1,
+    daysBetweenISO(settings.protocol_start_date, settings.protocol_end_date)
+  );
+  const activeCycle = cycles.find((c) => c.is_active) ?? null;
+
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
       {/* Header */}
@@ -444,7 +463,16 @@ export default function NutritionDashboard({
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
-              <span>Protocolo Cutting • 53 Dias (08/11 a 31/12/2026)</span>
+              <button
+                type="button"
+                onClick={() => setCycleModalOpen(true)}
+                className="hover:text-emerald-400 transition cursor-pointer text-left"
+                title="Gerenciar ciclos e datas do protocolo"
+              >
+                {activeCycle ? activeCycle.name : "Protocolo Cutting"} • {protocolDays} Dias (
+                {formatShortDateBR(settings.protocol_start_date)} a{" "}
+                {formatFullDateBR(settings.protocol_end_date)})
+              </button>
               <span
                 className={`normal-case px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
                   syncState === "saving"
@@ -465,7 +493,9 @@ export default function NutritionDashboard({
               Painel de Acompanhamento Nutricional
             </h1>
             <p className="text-sm text-[var(--muted-foreground)] mt-1">
-              Perfil: Homem, {settings.age_years ?? 33} anos, {((settings.height_cm ?? 181) / 100).toFixed(2).replace(".", ",")} m, 87,0 kg • Musculação 4x/sem • 5 Refeições/dia
+              Perfil: {settings.sex === 0 ? "Mulher" : "Homem"}, {settings.age_years ?? 33} anos,{" "}
+              {((settings.height_cm ?? 181) / 100).toFixed(2).replace(".", ",")} m, início{" "}
+              {Number(settings.start_weight_kg).toFixed(1).replace(".", ",")} kg • Musculação 4x/sem • 5 Refeições/dia
             </p>
           </div>
 
@@ -481,6 +511,14 @@ export default function NutritionDashboard({
                 className="bg-transparent text-emerald-400 font-semibold focus:outline-none"
               />
             </label>
+            <button
+              type="button"
+              onClick={() => setCycleModalOpen(true)}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/25 transition cursor-pointer"
+              title="Iniciar novo ciclo ou editar datas e metas do protocolo"
+            >
+              🗓️ Ciclos
+            </button>
             <a
               href="/api/plano-pdf"
               target="_blank"
@@ -534,10 +572,16 @@ export default function NutritionDashboard({
           </div>
           <div className="p-3.5 rounded-lg border border-[var(--border)] bg-[var(--background)]">
             <div className="text-xs text-[var(--muted-foreground)]">
-              {latestReal ? `Realizado (${latestReal.label}) vs Proj.` : "Meta de Peso (31/12)"}
+              {latestReal
+                ? `Realizado (${latestReal.label}) vs Proj.`
+                : `Meta de Peso (${formatShortDateBR(settings.protocol_end_date)})`}
             </div>
             <div className="text-lg font-bold mt-0.5 flex items-baseline gap-1.5">
-              <span>{latestReal ? `${latestReal.realizedKg.toFixed(1)} kg` : "83,4 kg"}</span>
+              <span>
+                {latestReal
+                  ? `${latestReal.realizedKg.toFixed(1)} kg`
+                  : `${pvrSummary.projectedFinalKg.toFixed(1).replace(".", ",")} kg`}
+              </span>
               {latestReal ? (
                 <span
                   className={`text-xs font-semibold ${
@@ -836,6 +880,24 @@ export default function NutritionDashboard({
       />
 
       <ChangePinModal open={pinModalOpen} onClose={() => setPinModalOpen(false)} />
+      <ProtocolCycleModal
+        open={cycleModalOpen}
+        onClose={() => setCycleModalOpen(false)}
+        settings={settings}
+        latestWeightKg={latestReal ? latestReal.realizedKg : null}
+        cycles={cycles}
+        historyAvailable={cyclesHistoryAvailable}
+        onCycleSaved={(result) => {
+          setSettings(result.settings);
+          setSimDeficit(result.settings.sim_deficit);
+          if (result.weights.length > 0) setWeights(result.weights);
+          setCycles(result.cycles);
+          setCyclesHistoryAvailable(result.historyAvailable);
+        }}
+        onCycleDeleted={(id) => {
+          setCycles((prev) => prev.filter((c) => c.id !== id));
+        }}
+      />
     </div>
   );
 }

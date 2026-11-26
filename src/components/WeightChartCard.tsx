@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getTodayBrazilISO, type UserSettingsDTO, type WeightLogDTO } from "@/data/nutrition";
+import {
+  formatShortDateBR,
+  getTodayBrazilISO,
+  type UserSettingsDTO,
+  type WeightLogDTO,
+} from "@/data/nutrition";
 import {
   buildProjectedVsRealizedSeries,
   type ProjectedPoint,
@@ -910,12 +915,16 @@ export default function WeightChartCard({
                 </div>
               </div>
               <div className="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3">
-                <div className="text-[11px] text-[var(--muted-foreground)]">Projeção Final (31/12)</div>
+                <div className="text-[11px] text-[var(--muted-foreground)]">
+                  Projeção Final ({formatShortDateBR(settings.protocol_end_date)})
+                </div>
                 <div className="text-base font-bold text-sky-400 mt-0.5">
                   {seriesData.projectedFinalKg.toFixed(1)} kg
                 </div>
                 <div className={`text-[10px] ${hitProjectedTarget ? "text-emerald-400 font-semibold" : "text-amber-400"}`}>
-                  {hitProjectedTarget ? "🎯 Dentro da meta 83–84 kg" : "Ajuste o déficit se desejar"}
+                  {hitProjectedTarget
+                    ? `🎯 Dentro da meta ${Number(settings.target_weight_min_kg).toFixed(0)}–${Number(settings.target_weight_max_kg).toFixed(0)} kg`
+                    : "Ajuste o déficit se desejar"}
                 </div>
               </div>
               <div className="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3">

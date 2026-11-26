@@ -2,7 +2,7 @@ import { metric } from "@vercel/functions";
 import { NextResponse } from "next/server";
 import { attachSessionCookie } from "@/lib/auth";
 import { getAuthedContext } from "@/lib/supabase";
-import { DEFAULT_CHECKPOINTS } from "@/data/nutrition";
+import { buildProtocolCheckpoints } from "@/data/nutrition";
 
 export async function POST(request: Request) {
   const startedAt = performance.now();
@@ -73,26 +73,54 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Ação inválida." }, { status: 400 });
     }
 
-    await ctx.supabase.from("weight_logs").delete().eq("user_id", ctx.userId);
-    const seedRows = DEFAULT_CHECKPOINTS.map((cp) => ({
+    const { data: settings, error: settingsErr } = await ctx.supabase
+      .from("user_settings")
+      .select("protocol_start_date, protocol_end_date, start_weight_kg, sim_deficit")
+      .eq("user_id", ctx.userId)
+      .single();
+
+    if (settingsErr || !settings) {
+      return NextResponse.json({ error: "Erro ao ler configurações do protocolo." }, { status: 500 });
+    }
+
+    const startDate = String(settings.protocol_start_date);
+    const endDate = String(settings.protocol_end_date);
+    const startWeightKg = Number(settings.start_weight_kg);
+    const simDeficit = Number(settings.sim_deficit) || 530;
+
+    // Preserva pesagens de ciclos anteriores (< startDate); reseta só o ciclo atual
+    await ctx.supabase
+      .from("weight_logs")
+      .delete()
+      .eq("user_id", ctx.userId)
+      .gte("recorded_date", startDate);
+
+    const seedRows = buildProtocolCheckpoints({
+      startDate,
+      endDate,
+      startWeightKg,
+      simDeficit,
+    }).map((cp) => ({
       user_id: ctx.userId,
       ...cp,
     }));
 
-    const [insertRes] = await Promise.all([
-      ctx.supabase
-        .from("weight_logs")
-        .insert(seedRows)
-        .select("id, recorded_date, weight_kg, source, is_projected, notes")
-        .order("recorded_date", { ascending: true }),
-      ctx.supabase.from("user_settings").update({ sim_deficit: 530 }).eq("user_id", ctx.userId),
-    ]);
+    const insertRes = await ctx.supabase
+      .from("weight_logs")
+      .insert(seedRows)
+      .select("id, recorded_date, weight_kg, source, is_projected, notes");
 
     if (insertRes.error) {
       return NextResponse.json({ error: "Erro ao restaurar projeção." }, { status: 500 });
     }
 
-    const res = NextResponse.json({ ok: true, weights: insertRes.data ?? [] });
+    const { data: allWeights } = await ctx.supabase
+      .from("weight_logs")
+      .select("id, recorded_date, weight_kg, source, is_projected, notes")
+      .eq("user_id", ctx.userId)
+      .order("recorded_date", { ascending: true });
+
+    const res = NextResponse.json({ ok: true, weights: allWeights ?? insertRes.data ?? [], simDeficit });
     if (ctx.refreshedSession) attachSessionCookie(res, ctx.refreshedSession);
     return res;
   } catch (err) {

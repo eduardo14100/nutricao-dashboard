@@ -5,6 +5,7 @@ import {
   DEFAULT_SELECTED_MEALS,
   getTodayBrazilISO,
   type DailyLogDTO,
+  type ProtocolCycleDTO,
   type UserSettingsDTO,
   type WeightLogDTO,
 } from "@/data/nutrition";
@@ -22,7 +23,7 @@ export default async function HomePage() {
 
   const activeDate = getTodayBrazilISO();
 
-  const [settingsRes, weightsRes, dailyRes, scaleRes] = await Promise.all([
+  const [settingsRes, weightsRes, dailyRes, scaleRes, cyclesRes] = await Promise.all([
     ctx.supabase
       .from("user_settings")
       .select(
@@ -51,6 +52,13 @@ export default async function HomePage() {
       .eq("user_id", ctx.userId)
       .order("measured_at", { ascending: false })
       .limit(365),
+    ctx.supabase
+      .from("protocol_cycles")
+      .select(
+        "id, name, start_date, end_date, start_weight_kg, target_weight_min_kg, target_weight_max_kg, sim_deficit, final_weight_kg, is_active, notes, created_at"
+      )
+      .eq("user_id", ctx.userId)
+      .order("start_date", { ascending: false }),
   ]);
 
   if (settingsRes.error || !settingsRes.data) {
@@ -87,6 +95,8 @@ export default async function HomePage() {
       initialDailyLogs={dailyLogs}
       initialTodayLog={todayLog}
       initialScaleMeasurements={(scaleRes.data ?? []) as ScaleMeasurementDTO[]}
+      initialCycles={cyclesRes.error ? [] : ((cyclesRes.data ?? []) as ProtocolCycleDTO[])}
+      initialCyclesHistoryAvailable={!cyclesRes.error}
     />
   );
 }

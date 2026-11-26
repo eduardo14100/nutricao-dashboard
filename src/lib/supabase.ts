@@ -67,6 +67,26 @@ export async function signInOwnerSession(remember: boolean): Promise<{
   };
 }
 
+// Sessão do proprietário reaproveitada (por instância serverless) apenas para LER o
+// pin_hash durante o login. Assim, PINs errados não disparam um novo
+// signInWithPassword a cada tentativa (o que poderia estourar o limite do Supabase
+// Auth e bloquear o próprio dono). Só o access token é usado; ao expirar, renova.
+let cachedOwnerReader: { client: SupabaseClient; userId: string; expiresAt: number } | null = null;
+
+export async function getOwnerPinReader(): Promise<{ supabase: SupabaseClient; userId: string }> {
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (cachedOwnerReader && cachedOwnerReader.expiresAt - nowSec > 300) {
+    return { supabase: cachedOwnerReader.client, userId: cachedOwnerReader.userId };
+  }
+  const fresh = await signInOwnerSession(false);
+  cachedOwnerReader = { client: fresh.supabase, userId: fresh.userId, expiresAt: fresh.session.expiresAt };
+  return { supabase: fresh.supabase, userId: fresh.userId };
+}
+
+export function invalidateOwnerPinReader(): void {
+  cachedOwnerReader = null;
+}
+
 export async function getAuthedContext(): Promise<{
   supabase: SupabaseClient;
   userId: string;

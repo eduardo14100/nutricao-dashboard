@@ -314,16 +314,75 @@ export const DIGESTION_OPTIONS = [
   { value: "Intestino preso / retenção líquida", label: "Intestino preso / Retenção" },
 ];
 
-export const DEFAULT_CHECKPOINTS = [
-  { recorded_date: "2026-11-08", weight_kg: 87.0, source: "checkpoint" as const, is_projected: false, notes: "Início do protocolo (Sem 0)" },
-  { recorded_date: "2026-11-15", weight_kg: 86.2, source: "projected" as const, is_projected: true, notes: "Projeção inicial (Sem 1)" },
-  { recorded_date: "2026-11-22", weight_kg: 85.7, source: "projected" as const, is_projected: true, notes: "Projeção inicial (Sem 2)" },
-  { recorded_date: "2026-11-29", weight_kg: 85.1, source: "projected" as const, is_projected: true, notes: "Projeção inicial (Sem 3)" },
-  { recorded_date: "2026-12-06", weight_kg: 84.7, source: "projected" as const, is_projected: true, notes: "Projeção inicial (Sem 4)" },
-  { recorded_date: "2026-12-13", weight_kg: 84.2, source: "projected" as const, is_projected: true, notes: "Projeção inicial (Sem 5)" },
-  { recorded_date: "2026-12-20", weight_kg: 83.8, source: "projected" as const, is_projected: true, notes: "Projeção inicial (Sem 6)" },
-  { recorded_date: "2026-12-31", weight_kg: 83.3, source: "projected" as const, is_projected: true, notes: "Projeção inicial (Sem 7 - Fim do Ano)" },
-];
+export interface ProtocolCheckpointSeed {
+  recorded_date: string;
+  weight_kg: number;
+  source: "checkpoint" | "projected";
+  is_projected: boolean;
+  notes: string;
+}
+
+export function addDaysISO(baseISO: string, days: number): string {
+  const dt = new Date(`${baseISO}T00:00:00Z`);
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
+/**
+ * Generates weekly checkpoints (Day 0 + every 7 days + final day) for any protocol cycle.
+ */
+export function buildProtocolCheckpoints(params: {
+  startDate: string;
+  endDate: string;
+  startWeightKg: number;
+  simDeficit: number;
+}): ProtocolCheckpointSeed[] {
+  const { startDate, endDate, startWeightKg, simDeficit } = params;
+  const totalDays = Math.max(1, daysBetweenISO(startDate, endDate));
+  const points: ProtocolCheckpointSeed[] = [
+    {
+      recorded_date: startDate,
+      weight_kg: Math.round(startWeightKg * 10) / 10,
+      source: "checkpoint",
+      is_projected: false,
+      notes: "Início do protocolo (Sem 0)",
+    },
+  ];
+
+  // Weekly checkpoints; if the last weekly step is within 2 days of endDate, skip directly to endDate
+  let week = 1;
+  for (let d = 7; d < totalDays; d += 7) {
+    if (totalDays - d < 3) break;
+    const date = addDaysISO(startDate, d);
+    const weight = Math.round((startWeightKg - (simDeficit * d) / 7700.0) * 10) / 10;
+    points.push({
+      recorded_date: date,
+      weight_kg: weight,
+      source: "projected",
+      is_projected: true,
+      notes: `Projeção (Sem ${week})`,
+    });
+    week++;
+  }
+
+  const finalWeight = Math.round((startWeightKg - (simDeficit * totalDays) / 7700.0) * 10) / 10;
+  points.push({
+    recorded_date: endDate,
+    weight_kg: finalWeight,
+    source: "projected",
+    is_projected: true,
+    notes: `Projeção Final (Sem ${week})`,
+  });
+
+  return points;
+}
+
+export const DEFAULT_CHECKPOINTS = buildProtocolCheckpoints({
+  startDate: "2026-11-08",
+  endDate: "2026-12-31",
+  startWeightKg: 87.0,
+  simDeficit: 530,
+});
 
 export interface Macros {
   kcal: number;
@@ -354,6 +413,21 @@ export interface UserSettingsDTO {
   age_years: number;
   sex: 0 | 1;
   scale_user_id: number | null;
+}
+
+export interface ProtocolCycleDTO {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+  start_weight_kg: number;
+  target_weight_min_kg: number;
+  target_weight_max_kg: number;
+  sim_deficit: number;
+  final_weight_kg: number | null;
+  is_active: boolean;
+  notes: string | null;
+  created_at?: string;
 }
 
 export interface WeightLogDTO {

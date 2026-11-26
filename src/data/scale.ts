@@ -1,6 +1,6 @@
 import {
+  buildProtocolCheckpoints,
   daysBetweenISO,
-  DEFAULT_CHECKPOINTS,
   formatFullDateBR,
   formatShortDateBR,
   getTodayBrazilISO,
@@ -259,8 +259,9 @@ export function buildProjectedVsRealizedSeries(params: {
   scaleMeasurements: ScaleMeasurementDTO[];
   simDeficit: number;
   settings: UserSettingsDTO;
+  capToProtocolEnd?: boolean;
 }): ProjectedVsRealizedSeries {
-  const { weights, scaleMeasurements, simDeficit, settings } = params;
+  const { weights, scaleMeasurements, simDeficit, settings, capToProtocolEnd = false } = params;
   const startWeightKg = Number(settings.start_weight_kg);
   const protocolStartDate = settings.protocol_start_date;
   const protocolEndDate = settings.protocol_end_date;
@@ -270,9 +271,14 @@ export function buildProjectedVsRealizedSeries(params: {
     sex: settings.sex === 0 ? 0 : 1,
   };
 
+  const inCycleWindow = (isoDate: string) =>
+    isoDate >= protocolStartDate && (!capToProtocolEnd || isoDate <= protocolEndDate);
+
   // Group scale measurements by measured_date, sorted by measured_at ASC -> pick FIRST of day (jejum)
   const scaleByDate = new Map<string, ScaleMeasurementDTO[]>();
-  const sortedScale = [...scaleMeasurements].sort((a, b) => a.measured_at.localeCompare(b.measured_at));
+  const sortedScale = [...scaleMeasurements]
+    .filter((m) => inCycleWindow(m.measured_date))
+    .sort((a, b) => a.measured_at.localeCompare(b.measured_at));
   for (const m of sortedScale) {
     const arr = scaleByDate.get(m.measured_date) ?? [];
     arr.push(m);
@@ -282,12 +288,12 @@ export function buildProjectedVsRealizedSeries(params: {
   // Group non-projected weight_logs by recorded_date
   const realWeightByDate = new Map<string, WeightLogDTO>();
   for (const w of weights) {
-    if (!w.is_projected) {
+    if (!w.is_projected && inCycleWindow(w.recorded_date)) {
       realWeightByDate.set(w.recorded_date, w);
     }
   }
 
-  // Collect all unique realized dates
+  // Collect all unique realized dates within the cycle
   const realizedDatesSet = new Set<string>([
     ...scaleByDate.keys(),
     ...realWeightByDate.keys(),
@@ -392,9 +398,15 @@ export function buildProjectedVsRealizedSeries(params: {
   const minDay = daysBetweenISO(protocolStartDate, timelineStartDate);
   const maxDay = Math.max(minDay + 7, daysBetweenISO(protocolStartDate, timelineEndDate));
 
-  const checkpointDates = new Set(DEFAULT_CHECKPOINTS.map((c) => c.recorded_date));
+  const dynamicCheckpoints = buildProtocolCheckpoints({
+    startDate: protocolStartDate,
+    endDate: protocolEndDate,
+    startWeightKg,
+    simDeficit,
+  });
+  const checkpointDates = new Set(dynamicCheckpoints.map((c) => c.recorded_date));
 
-  const projectedCheckpoints: ProjectedPoint[] = DEFAULT_CHECKPOINTS.map((cp) => {
+  const projectedCheckpoints: ProjectedPoint[] = dynamicCheckpoints.map((cp) => {
     const day = daysBetweenISO(protocolStartDate, cp.recorded_date);
     return {
       date: cp.recorded_date,
